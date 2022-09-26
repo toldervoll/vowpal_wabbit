@@ -192,9 +192,6 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
       */
 
-
-
-
   auto* pi_learner = make_reduction_learner(
       std::move(ld), pi, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)

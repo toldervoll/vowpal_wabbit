@@ -15,8 +15,8 @@ namespace simulator
 cb_sim::cb_sim(uint64_t seed)
     : users({"Tom", "Anna"})
     , times_of_day({"morning", "afternoon"})
-    //, actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
-    , actions({"politics", "sports", "music"})
+    , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+    // , actions({"politics", "sports", "music"})
     , user_ns("User")
     , action_ns("Action")
 {
@@ -89,7 +89,7 @@ std::pair<int, float> cb_sim::sample_custom_pmf(std::vector<float>& pmf)
   THROW("Error: No prob selected");
 }
 
-std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::map<std::string, std::string>& context)
+std::vector<float> cb_sim::get_pmf(VW::workspace* vw, const std::map<std::string, std::string>& context)
 {
   std::vector<std::string> multi_ex_str = cb_sim::to_vw_example_format(context, "");
   VW::multi_ex examples;
@@ -103,8 +103,7 @@ std::pair<std::string, float> cb_sim::get_action(VW::workspace* vw, const std::m
   for (auto action_score : ordered_scores) { pmf.push_back(action_score); }
   vw->finish_example(examples);
 
-  std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
-  return std::make_pair(actions[pmf_sample.first], pmf_sample.second);
+  return pmf;
 }
 
 const std::string& cb_sim::choose_user()
@@ -163,7 +162,10 @@ std::vector<float> cb_sim::run_simulation_hook(VW::workspace* vw, size_t num_ite
     // Add useless features if specified
     for (uint64_t j = 0; j < num_useless_features; ++j)
     { context.insert(std::pair<std::string, std::string>(std::to_string(j), std::to_string(j))); }
-    auto action_prob = get_action(vw, context);
+    // auto action_prob = get_action(vw, context);
+    auto pmf = get_pmf(vw, context);
+    std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
+    std::pair<std::string, float> action_prob =  std::make_pair(actions[pmf_sample.first], pmf_sample.second);
     auto chosen_action = action_prob.first;
     auto prob = action_prob.second;
 
@@ -248,6 +250,131 @@ std::vector<float> _test_helper_hook(const std::string& vw_arg, callback_map& ho
   simulator::cb_sim sim(seed);
   auto ctr = sim.run_simulation_hook(vw, num_iterations, hooks, true, 1, false, 0, swap_after);
   VW::finish(*vw);
+  return ctr;
+}
+
+std::string igl_sim::sample_feedback(const std::map<std::string, float>& probs) {
+  float draw = random_state.get_and_update_random();
+  float sum_prob = 0.f;
+  for (auto& feedback_prob : probs) {
+    sum_prob += feedback_prob.second;
+    if (draw < sum_prob) {
+      return feedback_prob.first;
+    }
+  }
+  THROW("Error: No feedback selected");
+}
+
+std::string igl_sim::get_feedback(const std::string& user, const std::string& chosen_action) {
+  if (ground_truth_enjoy.at(user) == chosen_action) {
+    return sample_feedback(enjoy_prob);
+  } else if (ground_truth_hate.at(user) == chosen_action) {
+    return sample_feedback(hate_prob);
+  }
+
+  return sample_feedback(neutral_prob);
+}
+
+igl_sim::igl_sim(uint64_t seed) 
+: cb_sim(seed)
+// , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
+, feedback_ns("Feedback")
+{
+  random_state.set_random_state(seed);
+}
+
+std::string igl_sim::to_psi_predict_ex(const std::map<std::string, std::string>& context,
+  const std::string& chosen_action, const std::string& feedback)
+{
+  return fmt::format(" |{} user={} time_of_day={} |{} article={} |{} feedback={}", 
+      user_ns, context.at("user"), context.at("time_of_day"),
+      action_ns, chosen_action,
+      feedback_ns, feedback);
+}
+
+std::vector<std::string> igl_sim::to_psi_learn_ex(const std::map<std::string, std::string>& context,
+  const std::string& chosen_action, const std::string& feedback, const std::vector<float>& pmf)
+{
+  std::vector<std::string> examples;
+  for (size_t i = 0; i < actions.size(); i++)
+  {
+    std::ostringstream ex;
+    int label = actions[i] == chosen_action ? 1 : -1;
+    float importance = actions[i] == chosen_action ? (1.f/4) / pmf[i] : (3.f/4) / (1 - pmf[i]);
+
+    ex << fmt::format("{} {} |{} user={} time_of_day={} |{} article={} |{} feedback={}", 
+        label, importance,
+        user_ns, context.at("user"), context.at("time_of_day"),
+        action_ns, actions[i],
+        feedback_ns, feedback);
+    examples.push_back(ex.str());
+  }
+  return examples;
+}
+
+float igl_sim::true_reward(const std::string& user, const std::string& action) {
+  return (ground_truth_enjoy.at(user) == action) - (ground_truth_hate.at(user) == action);
+}
+
+std::vector<float> igl_sim::run_simulation_hook(VW::workspace* pi, VW::workspace* psi, size_t num_iterations,
+    callback_map& callbacks, bool do_learn)
+{
+  for (size_t i = 0; i < num_iterations; i++) { // TODO: figure out if we need to add shift, noise
+    // 1. In each simulation choose a user
+    std::string user = choose_user();
+
+    // 2. Choose time of day for a given user
+    std::string time_of_day = choose_time_of_day();
+
+    // 3. Pass context to vw to get an action
+    std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
+
+    std::vector<float> pmf = get_pmf(pi, context);
+    std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
+    std::string chosen_action = actions[pmf_sample.first];
+    float label_prob = pmf_sample.second;
+
+    // 4. Simulate feedback for chosen action
+    std::string feedback = get_feedback(user, chosen_action);
+    true_reward_sum += true_reward(user, chosen_action);
+
+    if (do_learn) {
+      // 5 - create psi vw example using feedback, context and action
+      std::string psi_pred_ex_str = to_psi_predict_ex(context, chosen_action, feedback);
+      VW::example* psi_pred_ex = VW::read_example(*psi, psi_pred_ex_str);
+      // 6 - psi predict with psi example
+      psi->predict(*psi_pred_ex);
+      float psi_pred = psi_pred_ex->pred.scalar;
+      psi->finish_example(*psi_pred_ex);
+
+      // 7 - psi learn with psi example
+      std::vector<std::string> psi_learn_examples = to_psi_learn_ex(context, chosen_action, feedback, pmf);
+      for (const auto& ex : psi_learn_examples) {
+        VW::example* psi_learn_ex = VW::read_example(*psi, ex);
+        psi->learn(*psi_learn_ex);
+        psi->finish_example(*psi_learn_ex);
+      }
+
+      // 8 - detect extreme state and get different label cost value
+      float cost = 0;
+      if (psi_pred * 2 > 1) {
+        bool is_definitely_negative = feedback == "dislike" ? true : false;
+        cost = -p_unlabeled_prior + is_definitely_negative * (1 + p_unlabeled_prior);
+      }
+
+      // 9 - get the cost and construct pi vw example
+      std::vector<std::string> pi_ex_str = to_vw_example_format(context, chosen_action, cost, label_prob);
+      VW::multi_ex pi_examples;
+      for (const std::string& ex : pi_ex_str) { pi_examples.push_back(VW::read_example(*pi, ex)); }
+
+      // 10 - pi learn
+      pi->learn(pi_examples);
+      pi->finish_example(pi_examples);
+    }
+
+    // 11 - calculate ctr
+    ctr.push_back(true_reward_sum / static_cast<float>(i));
+  }
   return ctr;
 }
 }  // namespace simulator

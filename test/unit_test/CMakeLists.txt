@@ -57,6 +57,7 @@ add_executable(vw-unit-test.out
   v_array_test.cc
   vw_versions_test.cc
   weights_test.cc
+  igl_test.cc
 )
 
 if(VW_BUILD_LARGE_ACTION_SPACE)
