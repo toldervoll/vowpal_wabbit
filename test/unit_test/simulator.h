@@ -76,7 +76,7 @@ class igl_sim : public cb_sim {
 
   // assume two users communicate their satisfaction in the same way
   const std::map<std::string, float> enjoy_prob = {
-    {"dislike", 0}, {"skip", 0}, {"click", 0.4}, {"like", 0.1}, {"none", 0.5}
+    {"dislike", 0}, {"skip", 0}, {"click", 0.5}, {"like", 0.5}, {"none", 0}
   };
   const std::map<std::string, float> hate_prob = {
     {"dislike", 0.1}, {"skip", 0.9}, {"click", 0}, {"like", 0}, {"none", 0}
@@ -85,7 +85,6 @@ class igl_sim : public cb_sim {
     {"dislike", 0}, {"skip", 0}, {"click", 0}, {"like", 0}, {"none", 1}
   };
 
-  VW::rand_state random_state;
   std::string feedback_ns;
   const float p_unlabeled_prior = 0.5;
 

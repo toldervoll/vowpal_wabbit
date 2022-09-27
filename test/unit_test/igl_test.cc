@@ -21,17 +21,17 @@ BOOST_AUTO_TEST_CASE(igl_weights_equals_to_separate_vw_instances)
   callback_map test_hooks;
   // training policy
   std::string pi_arg =
-    "--quiet --cb_explore_adf --coin -q UA ";
+    "--quiet --cb_explore_adf --coin -q UA "; // --epsilon 0.2
 
   // decoder policy
   std::string psi_arg =
-    "--quiet --link=logistic --loss_function=logistic --coin --cubic UAF ";
+    "--quiet --link=logistic --loss_function=logistic --coin --cubic UFA ";
 
   std::string igl_arg =
     "--quiet --cb_explore_adf --coin "; //TODO: add -q
 
-  int seed = 789343;
-  size_t num_iterations = 10000;
+  size_t seed = 89271;
+  size_t num_iterations = 800000;
 
   auto* vw_pi = VW::initialize(pi_arg + "--invert_hash pi.vw");
   auto* vw_psi = VW::initialize(psi_arg);
@@ -41,12 +41,6 @@ BOOST_AUTO_TEST_CASE(igl_weights_equals_to_separate_vw_instances)
   simulator::igl_sim sim2(seed);
 
   auto ctr1 = sim1.run_simulation_hook(vw_pi, vw_psi, num_iterations, test_hooks);
-
-  for (size_t i = 0; i < ctr1.size(); i++) {
-    if (i % 100 == 0) {
-      std::cout << i << "   " << ctr1[i] << std::endl;
-    }
-  }
   // auto ctr2 = sim2.run_simulation_hook(vw_igl, num_iterations, test_hooks);
   
 }

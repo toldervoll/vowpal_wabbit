@@ -279,9 +279,7 @@ igl_sim::igl_sim(uint64_t seed)
 : cb_sim(seed)
 // , actions({"politics", "sports", "music", "food", "finance", "health", "camping"})
 , feedback_ns("Feedback")
-{
-  random_state.set_random_state(seed);
-}
+{}
 
 std::string igl_sim::to_psi_predict_ex(const std::map<std::string, std::string>& context,
   const std::string& chosen_action, const std::string& feedback)
@@ -358,8 +356,8 @@ std::vector<float> igl_sim::run_simulation_hook(VW::workspace* pi, VW::workspace
       // 8 - detect extreme state and get different label cost value
       float cost = 0;
       if (psi_pred * 2 > 1) {
-        bool is_definitely_negative = feedback == "dislike" ? true : false;
-        cost = -p_unlabeled_prior + is_definitely_negative * (1 + p_unlabeled_prior);
+        bool is_negative = feedback == "dislike" ? true : false;
+        cost = -1 + is_negative * (1 + 1 / p_unlabeled_prior);
       }
 
       // 9 - get the cost and construct pi vw example
@@ -374,7 +372,13 @@ std::vector<float> igl_sim::run_simulation_hook(VW::workspace* pi, VW::workspace
 
     // 11 - calculate ctr
     ctr.push_back(true_reward_sum / static_cast<float>(i));
+
+    // TODO: Remove this
+    if ( (i != 0) && ((i & (i - 1)) == 0)) {
+      std::cout << i << "   " << ctr[i] << std::endl;
+    }
   }
+  std::cout << ctr.size() - 1 << "   " << ctr.back() << std::endl; //TODO: Remove
   return ctr;
 }
 }  // namespace simulator
