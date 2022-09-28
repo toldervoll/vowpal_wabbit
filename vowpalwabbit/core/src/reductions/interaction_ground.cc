@@ -4,7 +4,6 @@
 
 #include "vw/core/reductions/interaction_ground.h"
 #include "vw/config/options_cli.h"
-#include "vw/core/reduction_stack.h"
 
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
@@ -85,31 +84,6 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 
 // this impl only needs (re-use instantiated coin instead of ftrl func, scorer setup func, count_label 
 // setup func) -> remove all other reduction setups
-struct custom_builder : VW::default_reduction_stack_setup
-{
-  custom_builder(VW::LEARNER::base_learner* ftrl_coin):psi_base(ftrl_coin)
-  {
-    std::set<std::string> keep = {"scorer", "count_label"};
-
-    for (int i=reduction_stack.size() - 1; i >= 0; i--) {
-      if (keep.count(std::get<0>(reduction_stack.at(i))) == 0) {
-        reduction_stack.erase(reduction_stack.begin() + i);
-      }
-    }
-  }
-
-  VW::LEARNER::base_learner* setup_base_learner() {
-    // auto base_label_type = all->example_parser->lbl_parser.label_type;
-    if (reduction_stack.size() == 0) {
-      return psi_base;
-    }
-    auto *psi_base_learner = VW::default_reduction_stack_setup::setup_base_learner();
-    return psi_base_learner;
-  }
-
-  private:
-  VW::LEARNER::base_learner* psi_base;
-};
 
 base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
@@ -167,11 +141,10 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   assert(psi_options->was_supplied("cb_adf") == false);
   assert(psi_options->was_supplied("loss_function") == true);
 
-  std::unique_ptr<VW::setup_base_i> psi_builder= VW::make_unique<custom_builder>(ftrl_coin);
+  std::unique_ptr<custom_builder> psi_builder = VW::make_unique<custom_builder>(ftrl_coin);
   VW::workspace temp(VW::io::create_null_logger());
   temp.example_parser = all->example_parser;
   psi_builder->delayed_state_attach(temp, *psi_options);
-
   ld->decoder_learner = psi_builder->setup_base_learner();
   // TODO: free argc and argv
   // for (int i = 0; i < argc; i++) { free(argv[i]); }
