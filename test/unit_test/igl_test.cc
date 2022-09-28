@@ -28,19 +28,20 @@ BOOST_AUTO_TEST_CASE(igl_weights_equals_to_separate_vw_instances)
     "--quiet --link=logistic --loss_function=logistic --coin --cubic UFA ";
 
   std::string igl_arg =
-    "--quiet --cb_explore_adf --coin "; //TODO: add -q
+    "--quiet --cb_explore_adf --coin --experimental_igl -q:: "; //TODO: add -q
 
-  size_t seed = 89271;
-  size_t num_iterations = 800000;
+  size_t seed = 782391;
+  // size_t num_iterations = 800000;
+  size_t num_iterations = 1;
 
-  auto* vw_pi = VW::initialize(pi_arg + "--invert_hash pi.vw");
-  auto* vw_psi = VW::initialize(psi_arg);
-  auto* vw_igl = VW::initialize(igl_arg + "--invert_hash igl.vw");
+  // auto* vw_pi = VW::initialize(pi_arg + "--invert_hash pi.vw");
+  // auto* vw_psi = VW::initialize(psi_arg);
+  auto* vw_igl = VW::initialize(igl_arg); // + "--invert_hash igl.vw"
 
   simulator::igl_sim sim1(seed);
   simulator::igl_sim sim2(seed);
 
-  auto ctr1 = sim1.run_simulation_hook(vw_pi, vw_psi, num_iterations, test_hooks);
-  // auto ctr2 = sim2.run_simulation_hook(vw_igl, num_iterations, test_hooks);
+  // auto ctr1 = sim1.run_simulation_hook(vw_pi, vw_psi, num_iterations, test_hooks);
+  auto ctr2 = sim2.run_simulation_hook(vw_igl, num_iterations, test_hooks);
   
 }

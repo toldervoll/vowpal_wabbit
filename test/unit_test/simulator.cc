@@ -381,4 +381,54 @@ std::vector<float> igl_sim::run_simulation_hook(VW::workspace* pi, VW::workspace
   std::cout << ctr.size() - 1 << "   " << ctr.back() << std::endl; //TODO: Remove
   return ctr;
 }
+
+std::vector<float> igl_sim::run_simulation_hook(VW::workspace* igl_vw, size_t num_iterations,
+    callback_map& callbacks, bool do_learn)
+{
+    for (size_t i = 0; i < num_iterations; i++) { // TODO: figure out if we need to add shift, noise
+    // 1. In each simulation choose a user
+    std::string user = choose_user();
+
+    // 2. Choose time of day for a given user
+    std::string time_of_day = choose_time_of_day();
+
+    // 3. Pass context to vw to get an action
+    std::map<std::string, std::string> context{{"user", user}, {"time_of_day", time_of_day}};
+
+    std::vector<float> pmf = get_pmf(igl_vw, context);
+    std::pair<int, float> pmf_sample = sample_custom_pmf(pmf);
+    auto chosen_action = actions[pmf_sample.first];
+    float label_prob = pmf_sample.second;
+    
+    // TODO:
+    // call igl_vw.predict to get pmf
+    // then call sample_custom_pmf to get chosen_action
+
+    // 4. Simulate feedback for chosen action
+    std::string feedback = get_feedback(user, chosen_action);
+    true_reward_sum += true_reward(user, chosen_action);
+
+    if (do_learn) {
+      std::cout << chosen_action << std::endl;
+      // TODO: 5 - create IGL example including feedback
+      std::vector<std::string> igl_ex_str = to_vw_example_format(context, chosen_action, 1.5f, 0.8f);
+      VW::multi_ex igl_examples;
+      for (const std::string& ex : igl_ex_str) { igl_examples.push_back(VW::read_example(*igl_vw, ex)); }
+      
+    //   // TODO 6 - igl_vw.learn()
+      // igl_vw->learn(igl_examples);
+      // igl_vw->finish_example(igl_examples);
+    }
+
+    // 7 - calculate ctr
+    ctr.push_back(true_reward_sum / static_cast<float>(i));
+
+    // // TODO: Remove this
+    // if ( (i != 0) && ((i & (i - 1)) == 0)) {
+    //   std::cout << i << "   " << ctr[i] << std::endl;
+    // }
+  }
+  // std::cout << ctr.size() - 1 << "   " << ctr.back() << std::endl; //TODO: Remove
+  return ctr;
+}
 }  // namespace simulator

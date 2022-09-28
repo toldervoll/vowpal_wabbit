@@ -48,6 +48,7 @@ void negate_cost(VW::multi_ex& ec_seq)
 
 void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
+  // TODO: 1. figure out how to construct single line ex from multi_ex
   // find reward of sequence
   CB::cb_class label = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
   ig.total_uniform_cost += label.cost / label.probability / ec_seq.size();  //=p(uniform) * IPS estimate
@@ -136,13 +137,17 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   auto* pi = as_multiline(stack_builder.setup_base_learner());
 
+  std::cout << "pi policy is multiline: " << pi->is_multiline() << std::endl;
+
   // 1. fetch already allocated coin reduction
   std::vector<std::string> enabled_reductions;
   pi->get_enabled_reductions(enabled_reductions);
   const char* const delim = ", ";
   std::ostringstream imploded;
   std::copy(
-      enabled_reductions.begin(), enabled_reductions.end() - 1, std::ostream_iterator<std::string>(imploded, delim));
+      enabled_reductions.begin(),
+      enabled_reductions.end() - 1,
+      std::ostream_iterator<std::string>(imploded, delim));
   std::cerr << "(inside IGL): " << imploded.str() << enabled_reductions.back() << std::endl;
 
   auto* ftrl_coin = pi->get_learner_by_name_prefix("ftrl-Coin");

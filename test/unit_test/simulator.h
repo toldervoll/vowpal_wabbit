@@ -92,6 +92,8 @@ public:
   igl_sim(uint64_t seed = 0);
   std::vector<float> run_simulation_hook(VW::workspace* pi, VW::workspace* psi, size_t num_iterations,
       callback_map& callbacks, bool do_learn = true);
+  std::vector<float> run_simulation_hook(VW::workspace* igl_vw, size_t num_iterations,
+      callback_map& callbacks, bool do_learn = true);
   std::string sample_feedback(const std::map<std::string, float>& probs);
   std::string get_feedback(const std::string& pref, const std::string& chosen_action);
   std::string to_psi_predict_ex(const std::map<std::string, std::string>& context,

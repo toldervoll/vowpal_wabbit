@@ -531,7 +531,9 @@ multi_learner* as_multiline(learner<T, E>* l)
 template <class T, class E>
 single_learner* as_singleline(learner<T, E>* l)
 {
-  if (!l->is_multiline()) { return reinterpret_cast<single_learner*>(l); }
+  if (!l->is_multiline()) { 
+    return reinterpret_cast<single_learner*>(l); 
+  }
   auto message = fmt::format("Tried to use a multiline reduction as a singleline reduction. Name: {}", l->get_name());
   THROW(message);
 }
