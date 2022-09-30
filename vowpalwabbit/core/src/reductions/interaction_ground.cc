@@ -143,9 +143,12 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   std::unique_ptr<custom_builder> psi_builder = VW::make_unique<custom_builder>(ftrl_coin);
   VW::workspace temp(VW::io::create_null_logger());
-  temp.example_parser = all->example_parser;
+  // assuming parser gets destroyed by workspace
+  temp.example_parser = new parser{all->example_parser->example_queue_limit, all->example_parser->strict_parse};
+
   psi_builder->delayed_state_attach(temp, *psi_options);
   ld->decoder_learner = psi_builder->setup_base_learner();
+
   // TODO: free argc and argv
   // for (int i = 0; i < argc; i++) { free(argv[i]); }
   // free(argv);
