@@ -28,6 +28,8 @@ struct label
   // indicates if the example has feedback and the example is for training
   bool labeled;
   float weight;
+  float prob = 0.f; // label probability for chosen action
+
   label() { reset_to_default(); }
 
   void reset_to_default()

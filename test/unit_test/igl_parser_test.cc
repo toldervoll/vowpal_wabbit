@@ -33,4 +33,26 @@ BOOST_AUTO_TEST_CASE(igl_parse_label)
     BOOST_CHECK_EQUAL(igl_label.type, VW::igl::example_type::shared);
     BOOST_CHECK_EQUAL(igl_label.labeled, false);
   }
+
+  {
+    VW::igl::label igl_label;
+    parse_igl_label("igl action", igl_label);
+    BOOST_CHECK_EQUAL(igl_label.type, VW::igl::example_type::action);
+    BOOST_CHECK_EQUAL(igl_label.prob, 0.f);
+  }
+
+  {
+    VW::igl::label igl_label;
+    parse_igl_label("igl action 0.8", igl_label);
+    BOOST_CHECK_EQUAL(igl_label.type, VW::igl::example_type::action);
+    compare(igl_label.prob, 0.8f, FLOAT_TOL);
+  }
+
+  // {
+  //   VW::igl::label igl_label;
+  //   parse_igl_label("igl feedback", igl_label);
+  //   BOOST_CHECK_EQUAL(igl_label.type, VW::igl::example_type::feedback);
+  //   BOOST_CHECK_EQUAL(label.labeled, true);
+  // }
+
 }

@@ -40,8 +40,24 @@ void parse_label(igl::label& ld, VW::label_parser_reuse_mem& reuse_mem, const st
   const auto& type = words[1];
   if (type == SHARED_TYPE)
   {
+    if (words.size() != 2)
+    {
+      THROW("IGL shared labels must be of the form: igl shared");
+    }
+
     ld.type = example_type::shared;
   }
+  else if (type == ACTION_TYPE)
+  {
+    if (words.size() == 3) {
+      ld.prob = float_of_string(words[2], logger);
+    }
+    else if (words.size() != 2) {
+      THROW("IGL action labels must be of the form: igl action [chosen_action_probability]");
+    }
+    ld.type = example_type::action;
+  }
+
   else
   {
     THROW("Unknown IGL label type: " << type);
