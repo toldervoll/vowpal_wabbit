@@ -25,6 +25,7 @@ add_executable(vw-unit-test.out
   example_test.cc
   feature_group_test.cc
   guard_test.cc
+  igl_parser_test.cc
   interactions_test.cc
   json_parser_test.cc
   loss_functions_test.cc

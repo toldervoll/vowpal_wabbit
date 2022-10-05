@@ -9,6 +9,7 @@
 #include "vw/core/cb_continuous_label.h"
 #include "vw/core/ccb_label.h"
 #include "vw/core/cost_sensitive.h"
+#include "vw/core/igl_label.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/no_label.h"
@@ -48,6 +49,9 @@ VW::label_parser VW::get_label_parser(VW::label_type_t label_type)
 
     case VW::label_type_t::continuous:
       return VW::cb_continuous::the_label_parser;
+
+    case VW::label_type_t::igl:
+      return VW::igl::igl_label_parser;
   }
 
   THROW("Unknown label type in get_label_parser. This should be unreachable code.")

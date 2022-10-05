@@ -41,6 +41,7 @@ set(vw_core_headers
   include/vw/core/global_data.h
   include/vw/core/guard.h
   include/vw/core/hashstring.h
+  include/vw/core/igl_label.h
   include/vw/core/interactions_predict.h
   include/vw/core/io_buf.h
   include/vw/core/json_utils.h
@@ -210,6 +211,7 @@ set(vw_core_sources
   src/gen_cs_example.cc
   src/global_data.cc
   src/hashstring.cc
+  src/igl_label.cc
   src/io_buf.cc
   src/kskip_ngram_transformer.cc
   src/label_dictionary.cc

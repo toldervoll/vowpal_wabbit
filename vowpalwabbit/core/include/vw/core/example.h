@@ -16,6 +16,7 @@
 #include "vw/core/cost_sensitive.h"
 #include "vw/core/example_predict.h"
 #include "vw/core/feature_group.h"
+#include "vw/core/igl_label.h"
 #include "vw/core/multiclass.h"
 #include "vw/core/multilabel.h"
 #include "vw/core/no_label.h"
@@ -47,6 +48,7 @@ struct polylabel
   VW::slates::label slates;
   CB_EVAL::label cb_eval;
   MULTILABEL::labels multilabels;
+  VW::igl::label igl;
 };
 
 struct polyprediction

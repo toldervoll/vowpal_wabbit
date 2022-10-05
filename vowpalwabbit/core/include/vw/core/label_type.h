@@ -22,7 +22,8 @@ enum class label_type_t : uint32_t
   ccb,  // conditional contextual-bandit
   slates,
   nolabel,
-  continuous  // continuous actions
+  continuous,  // continuous actions
+  igl // interaction grounded learning
 };
 string_view to_string(VW::label_type_t);
 }  // namespace VW

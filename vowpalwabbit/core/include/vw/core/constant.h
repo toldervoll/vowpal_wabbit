@@ -41,6 +41,7 @@ constexpr size_t NUM_NAMESPACES = 256;
 
 constexpr const char* CCB_LABEL = "ccb";
 constexpr const char* SLATES_LABEL = "slates";
+constexpr const char* IGL_LABEL = "igl";
 constexpr const char* SHARED_TYPE = "shared";
 constexpr const char* ACTION_TYPE = "action";
 constexpr const char* SLOT_TYPE = "slot";
