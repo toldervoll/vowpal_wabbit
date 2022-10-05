@@ -8,6 +8,7 @@
 #include "vw/core/ccb_reduction_features.h"
 #include "vw/core/parse_example_json.h"
 #include "vw/core/slates_label.h"
+#include "vw/core/igl_label.h"
 #include "vw/core/vw.h"
 
 #include <boost/test/test_tools.hpp>
@@ -72,6 +73,12 @@ inline std::ostream& operator<<(std::ostream& os, VW::slates::example_type ex_ty
 }
 
 inline std::ostream& operator<<(std::ostream& os, CCB::example_type ex_type)
+{
+  os << VW::to_string(ex_type);
+  return os;
+}
+
+inline std::ostream& operator<<(std::ostream& os, VW::igl::example_type ex_type)
 {
   os << VW::to_string(ex_type);
   return os;
