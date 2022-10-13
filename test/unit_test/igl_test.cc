@@ -28,7 +28,7 @@ BOOST_AUTO_TEST_CASE(igl_weights_equals_to_separate_vw_instances)
     "--quiet --link=logistic --loss_function=logistic --coin --cubic UFA ";
 
   std::string igl_arg =
-    "--quiet --cb_explore_adf --coin --experimental_igl -q:: "; //TODO: add -q
+    "-f igl.model --readable_model igl.readable --quiet --cb_explore_adf --coin --experimental_igl -q:: --noconstant"; //TODO: add -q
 
   size_t seed = 782391;
   // size_t num_iterations = 800000;
@@ -43,5 +43,5 @@ BOOST_AUTO_TEST_CASE(igl_weights_equals_to_separate_vw_instances)
 
   // auto ctr1 = sim1.run_simulation_hook(vw_pi, vw_psi, num_iterations, test_hooks);
   auto ctr2 = sim2.run_simulation_hook(vw_igl, num_iterations, test_hooks);
-  
+  VW::finish(*vw_igl);
 }

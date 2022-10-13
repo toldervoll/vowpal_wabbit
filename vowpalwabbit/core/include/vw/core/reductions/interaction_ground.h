@@ -7,6 +7,7 @@
 #include "vw/core/reduction_stack.h"
 #include <set>
 #include <vector>
+#include "vw/core/constant.h"
 
 namespace VW
 {

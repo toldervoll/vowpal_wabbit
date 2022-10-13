@@ -416,8 +416,8 @@ std::vector<float> igl_sim::run_simulation_hook(VW::workspace* igl_vw, size_t nu
       for (const std::string& ex : igl_ex_str) { igl_examples.push_back(VW::read_example(*igl_vw, ex)); }
       
     //   // TODO 6 - igl_vw.learn()
-      // igl_vw->learn(igl_examples);
-      // igl_vw->finish_example(igl_examples);
+      igl_vw->learn(igl_examples);
+      igl_vw->finish_example(igl_examples);
     }
 
     // 7 - calculate ctr

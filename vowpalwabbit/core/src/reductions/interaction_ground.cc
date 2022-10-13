@@ -15,6 +15,7 @@
 #include "vw/core/setup_base.h"
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
+#include "vw/core/loss_functions.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -31,7 +32,14 @@ struct interaction_ground
   double total_importance_weighted_cost = 0.;
   double total_uniform_cost = 0.;
 
-  VW::LEARNER::base_learner* decoder_learner = nullptr;
+  VW::LEARNER::single_learner* decoder_learner = nullptr;
+  VW::example* buffer_sl = nullptr;
+  std::vector<std::vector<namespace_index>>* interactions;
+  std::vector<std::vector<extent_term>>* extent_interactions;
+
+  ~interaction_ground() {
+    VW::dealloc_examples(buffer_sl, 1);
+  }
 };
 
 void negate_cost(VW::multi_ex& ec_seq)
@@ -45,40 +53,80 @@ void negate_cost(VW::multi_ex& ec_seq)
   }
 }
 
+// TODO: we copied this from parser.cc, but we don't need workspace
+void empty_example(example& ec)
+{
+  for (features& fs : ec) { fs.clear(); }
+
+  ec.indices.clear();
+  ec.tag.clear();
+  ec.sorted = false;
+  ec.end_pass = false;
+  ec.is_newline = false;
+  ec._reduction_features.clear();
+  ec.num_features_from_interactions = 0;
+}
+
 void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  // TODO: 1. figure out how to construct single line ex from multi_ex
-  // find reward of sequence
-  CB::cb_class label = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
-  ig.total_uniform_cost += label.cost / label.probability / ec_seq.size();  //=p(uniform) * IPS estimate
-  ig.total_uniform_reward += -label.cost / label.probability / ec_seq.size();
+  // // find reward of sequence
+  // CB::cb_class label = CB_ADF::get_observed_cost_or_default_cb_adf(ec_seq);
+  // ig.total_uniform_cost += label.cost / label.probability / ec_seq.size();  //=p(uniform) * IPS estimate
+  // ig.total_uniform_reward += -label.cost / label.probability / ec_seq.size();
 
   // find prediction & update for cost
-  base.predict(ec_seq);
-  ig.total_importance_weighted_cost += get_cost_estimate(label, ec_seq[0]->pred.a_s[0].action);
-  base.learn(ec_seq);
+  // base.predict(ec_seq);
+  // ig.total_importance_weighted_cost += get_cost_estimate(label, ec_seq[0]->pred.a_s[0].action);
+  // base.learn(ec_seq);
 
   // find prediction & update for reward
-  label.cost = -label.cost;
-  base.predict(ec_seq, 1);
-  ig.total_importance_weighted_reward += get_cost_estimate(label, ec_seq[0]->pred.a_s[0].action);
+  // label.cost = -label.cost;
+  // base.predict(ec_seq, 1);
+  // ig.total_importance_weighted_reward += get_cost_estimate(label, ec_seq[0]->pred.a_s[0].action);
 
   // change cost to reward
-  negate_cost(ec_seq);
-  base.learn(ec_seq, 1);
-  negate_cost(ec_seq);
+  // negate_cost(ec_seq);
+  // base.learn(ec_seq, 1);
+  // negate_cost(ec_seq);
+
+
+  // 1. Hardcode a feedback example
+  for (auto& ex_action: ec_seq) {
+    empty_example(*ig.buffer_sl);
+    // TODO: Do we need constant feature here? If so, VW::add_constant_feature
+    LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, *ex_action);
+    ig.buffer_sl->indices.push_back(feedback_namespace);
+    ig.buffer_sl->feature_space[feedback_namespace].push_back(1, 777);
+    std::cout << "==features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
+    std::cout << ex_action->l.cb.costs.empty() << std::endl;
+
+    // learning psi
+    float label = -1.f;
+    // TODO: update the importance for each example
+    float importance = 0.5;
+    if (!ex_action->l.cb.costs.empty()) {
+      label = 1.f;
+    }
+
+    ig.buffer_sl->l.simple.label = label;
+    ig.buffer_sl->weight = importance;
+
+    ig.buffer_sl->interactions = ig.interactions; // TODO: not reuse ig.interactions, need to add in feedback
+    ig.buffer_sl->extent_interactions = ig.extent_interactions; // TODO(low pri): not reuse ig.extent_interactions, need to add in feedback
+
+    ig.decoder_learner->learn(*ig.buffer_sl, 0);
+  }
+  // 4. Psi predict
+
+  // 5. Update the label in es
+
+  // 6. Train pi policy
+
 }
 
 void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  // figure out which is better by our current estimate.
-  if (ig.total_uniform_cost - ig.total_importance_weighted_cost >
-      ig.total_uniform_reward - ig.total_importance_weighted_reward)
-  { base.predict(ec_seq); }
-  else
-  {
-    base.predict(ec_seq, 1);
-  }
+  base.predict(ec_seq);
 }
 }  // namespace
 
@@ -104,6 +152,9 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   // number of weight vectors needed
   size_t problem_multiplier = 2;  // One for pi(training model) and one for psi(decoder model)
   auto ld = VW::make_unique<interaction_ground>();
+
+  ld->buffer_sl = VW::alloc_examples(1);
+
 
   // Ensure cb_explore_adf so we are reducing to something useful.
   // Question: are cb_adf and cb_explore_adf using same stack? Can we support both?
@@ -142,12 +193,17 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   assert(psi_options->was_supplied("loss_function") == true);
 
   std::unique_ptr<custom_builder> psi_builder = VW::make_unique<custom_builder>(ftrl_coin);
-  VW::workspace temp(VW::io::create_null_logger());
+  //VW::workspace temp(VW::io::create_null_logger());
+  std::unique_ptr<VW::workspace> temp = VW::make_unique<VW::workspace>(VW::io::create_null_logger());
   // assuming parser gets destroyed by workspace
-  temp.example_parser = new parser{all->example_parser->example_queue_limit, all->example_parser->strict_parse};
-
-  psi_builder->delayed_state_attach(temp, *psi_options);
-  ld->decoder_learner = psi_builder->setup_base_learner();
+  temp->example_parser = new parser{all->example_parser->example_queue_limit, all->example_parser->strict_parse};
+  temp->sd = new shared_data(); //TODO: separate sd or shared?
+  temp->loss = get_loss_function(*temp, "logistic", -1.f, 1.f); // TODO: min is -1 or 0?
+  psi_builder->delayed_state_attach(*temp, *psi_options);
+  ld->decoder_learner = as_singleline(psi_builder->setup_base_learner());
+  temp.release(); // todo: this leaks memory but whateve for now
+  ld->interactions = &all->interactions;
+  ld->extent_interactions = &all->extent_interactions;
 
   // TODO: free argc and argv
   // for (int i = 0; i < argc; i++) { free(argv[i]); }
@@ -181,6 +237,9 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
                 .set_output_prediction_type(prediction_type_t::action_scores)
                 .set_input_prediction_type(prediction_type_t::action_scores)
                 .build();
+
+  // TODO: assert ftrl is the base, fail otherwise
+  // VW::reductions::util::fail_if_enabled
 
   return make_base(*pi_learner);
 }
