@@ -27,8 +27,9 @@ BOOST_AUTO_TEST_CASE(igl_weights_equals_to_separate_vw_instances)
   std::string psi_arg =
     "--quiet --link=logistic --loss_function=logistic --coin --cubic UFA ";
 
+  // --readable_model igl.readable
   std::string igl_arg =
-    "-f igl.model --readable_model igl.readable --quiet --cb_explore_adf --coin --experimental_igl -q:: --noconstant"; //TODO: add -q
+    "-f igl.model --invert_hash igl.invert  --quiet --cb_explore_adf -q UA --coin --experimental_igl"; // TODO: try -q::, what about noconstant?
 
   size_t seed = 782391;
   // size_t num_iterations = 800000;
