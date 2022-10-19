@@ -33,31 +33,6 @@ using namespace VW::math;
 
 namespace
 {
-struct ftrl_update_data
-{
-  float update = 0.f;
-  float ftrl_alpha = 0.f;
-  float ftrl_beta = 0.f;
-  float l1_lambda = 0.f;
-  float l2_lambda = 0.f;
-  float predict = 0.f;
-  float normalized_squared_norm_x = 0.f;
-  float average_squared_norm_x = 0.f;
-};
-
-struct ftrl
-{
-  VW::workspace* all = nullptr;  // features, finalize, l1, l2,
-  float ftrl_alpha = 0.f;
-  float ftrl_beta = 0.f;
-  ftrl_update_data data;
-  size_t no_win_counter = 0;
-  size_t early_stop_thres = 0;
-  uint32_t ftrl_size = 0;
-  double total_weight = 0.0;
-  double normalized_sum_norm_x = 0.0;
-};
-
 struct uncertainty
 {
   float pred;
@@ -239,6 +214,13 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_WE] += (-gradient * w[W_XT]);
 
   w[W_XT] /= d.average_squared_norm_x;
+  std::cout << "inner update: " << d.update << "x: " << x <<std::endl;
+  std::cout << "w[0]: " << w[0] << ", "
+    << "w[1]: " << w[1] << ", "
+    << "w[2]: " << w[2] << ", "
+    << "w[3]: " << w[3] << ", "
+    << "w[4]: " << w[4] << ", "
+    << "w[5]: " << w[5] << std::endl; 
 }
 
 void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
@@ -255,8 +237,14 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   b.data.average_squared_norm_x = (static_cast<float>((b.normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
-
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
+
+  std::cout << "[ftrl] " << "predict: " << b.data.predict << ", "
+    << "normalized_sum_norm_x: " << b.normalized_sum_norm_x << ", "
+    << "total weight: " <<  b.total_weight << ", "
+    << "avg squared norm: " << b.data.average_squared_norm_x << ", "
+    << "partial pred: " << ec.partial_prediction << ", "
+    << "pred.scalar: " << ec.pred.scalar << std::endl;
 }
 
 void update_state_and_predict_pistol(ftrl& b, base_learner&, VW::example& ec)
@@ -287,7 +275,9 @@ void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  std::cout << "[ftrl before inner] update: " << b.data.update << std::endl;
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+  std::cout << "[ftrl after inner] update" << b.data.update << std::endl; 
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because

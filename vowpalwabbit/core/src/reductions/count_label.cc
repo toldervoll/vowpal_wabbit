@@ -14,6 +14,7 @@
 #include "vw/core/parser.h"
 #include "vw/core/setup_base.h"
 #include "vw/io/logger.h"
+#include "details/automl_impl.h"
 
 namespace
 {
@@ -30,7 +31,8 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
 {
   shared_data* sd = data._all->sd;
   VW::count_label(*sd, ec.l.simple.label);
-
+  std::cout << "[count label] single ex learn features: " << VW::debug::features_to_string(ec) << std::endl;
+  std::cout << "[count label]" << ec.l.simple.label << ", " << ec.weight << std::endl;
   if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
   else
   {
@@ -107,6 +109,8 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
                         .build();
     return VW::LEARNER::make_base(*learner);
   }
+
+  std::cout <<"[Count label]" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
 
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))

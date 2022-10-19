@@ -409,9 +409,9 @@ std::vector<float> igl_sim::run_simulation_hook(VW::workspace* igl_vw, size_t nu
     true_reward_sum += true_reward(user, chosen_action);
 
     if (do_learn) {
-      std::cout << chosen_action << std::endl;
       // TODO: 5 - create IGL example including feedback
       std::vector<std::string> igl_ex_str = to_vw_example_format(context, chosen_action, 1.5f, 0.8f);
+      std::cout << igl_ex_str << std::endl;
       VW::multi_ex igl_examples;
       for (const std::string& ex : igl_ex_str) { igl_examples.push_back(VW::read_example(*igl_vw, ex)); }
       

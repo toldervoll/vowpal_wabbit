@@ -16,6 +16,8 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/core/loss_functions.h"
+#include "details/automl_impl.h"
+#include "vw/core/reductions/ftrl.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -28,11 +30,13 @@ struct interaction_ground
   float p_unlabeled_prior = 0.5f;
   VW::LEARNER::single_learner* decoder_learner = nullptr;
   VW::example* buffer_sl = nullptr; // TODO: rename this. This is buffer single line example
+  VW::example* buffer_sl2 = nullptr; // TODO: rename this. This is buffer single line example
 
   std::vector<std::vector<namespace_index>> psi_interactions;
   std::vector<std::vector<extent_term>>* extent_interactions;
 
   std::unique_ptr<VW::workspace> temp; // TODO: rename temp
+  ftrl* ftrl_base;
   ~interaction_ground() {
     VW::dealloc_examples(buffer_sl, 1);
   }
@@ -49,25 +53,45 @@ void empty_example(example& ec)
   ec.end_pass = false;
   ec.is_newline = false;
   ec._reduction_features.clear();
+  ec.loss = 0.f;
   ec.num_features_from_interactions = 0;
 }
 
 void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
+  // VW::workspace* original = ig.ftrl_base->all;
+  // ig.ftrl_base->all = ig.temp.get();
+  std::swap(ig.ftrl_base->all->loss, ig.temp->loss);
+  std::swap(ig.ftrl_base->all->sd, ig.temp->sd);
+
+  float psi_pred = 0.f;
+  int chosen_action_idx = 0;
+
+  const auto it = std::find_if(ec_seq.begin(), ec_seq.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
+
+  if (it != ec_seq.end())
+  {
+    chosen_action_idx = std::distance(ec_seq.begin(), it);
+  }
+
   for (auto& ex_action: ec_seq) {
     empty_example(*ig.buffer_sl);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, *ex_action);
+    auto feature_hash = VW::hash_feature(*ig.ftrl_base->all, "click", VW::hash_space(*ig.ftrl_base->all, "Feedback"));
+    auto fh2 = 1328936; // hash for "|Feedback click"
+    // ig.buffer_sl->indices.push_back(70);
+    // ig.buffer_sl->feature_space[70].push_back(1, fh2); // feature name 777 value 1
     ig.buffer_sl->indices.push_back(feedback_namespace);
-    ig.buffer_sl->feature_space[feedback_namespace].push_back(1, 777); // feature name 777 value 1
-    std::cout << "==features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
-    std::cout << ex_action->l.cb.costs.empty() << std::endl;
+    ig.buffer_sl->feature_space[feedback_namespace].push_back(1, fh2); // feature name 777 value 1
+
+    std::cout << "[IGL] psi learn features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
 
     // 1. learning psi
     float label = -1.f;
     // TODO: update the importance for each example
     // Need to pass in the pa distribution
-    float importance = 0.5;
+    float importance = 0.6f;
     if (!ex_action->l.cb.costs.empty()) {
       label = 1.f;
     }
@@ -75,58 +99,38 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     ig.buffer_sl->l.simple.label = label;
     ig.buffer_sl->weight = importance;
 
-    // TODO(high p): change the interactions to loop through the ig.interactions. similiar to https://github.com/VowpalWabbit/vowpal_wabbit/blob/14b59e8249edaeb74251e9ac0d2d25966767ed0f/vowpalwabbit/core/src/reductions/details/automl/automl_oracle.cc#L87
+    std::cout << label << ", " << importance << std::endl;
+
     ig.buffer_sl->interactions = &ig.psi_interactions;
-    std::cout << "--interactions--" << std::endl;
-    std::cout << ig.buffer_sl->interactions << std::endl;
+    // ig.buffer_sl->interactions = &ig.ftrl_base->all->interactions;
     ig.buffer_sl->extent_interactions = ig.extent_interactions; // TODO(low pri): not reuse ig.extent_interactions, need to add in feedback
 
     // 2. psi learn
     ig.decoder_learner->learn(*ig.buffer_sl, 0);
+
+    if (!ex_action->l.cb.costs.empty()) {
+     psi_pred = ig.buffer_sl->pred.scalar;
+    }
+  }
+  // ig.ftrl_base->all = original;
+  std::swap(ig.ftrl_base->all->loss, ig.temp->loss);
+  std::swap(ig.ftrl_base->all->sd, ig.temp->sd);
+
+
+  float fake_cost = 0.f;
+
+  // 4. update multi line ex label
+  if (psi_pred * 2 > 1) {
+    // extreme state
+    // TODO: get Definitely Bad from feedback example
+    bool is_neg = 1;
+    fake_cost = -ig.p_unlabeled_prior + is_neg * (1 + ig.p_unlabeled_prior); // TODO: update to latest version
   }
 
-  // 3. Psi predict - (single line ex) feedback + context + chosen action
-  auto chosen_action_it = std::find_if(ec_seq.begin(), ec_seq.end(), [](const example* action_ex) {
-    return !action_ex->l.cb.costs.empty();
-  });
-
-  if (chosen_action_it != ec_seq.end()) {
-    empty_example(*ig.buffer_sl);
-
-    size_t chosen_action_idx = std::distance(ec_seq.begin(), chosen_action_it);
-    std::cout << "==chosen action idx: " << chosen_action_idx << std::endl;
-    // TODO: Do we need constant feature here? If so, VW::add_constant_feature
-    LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, **chosen_action_it);
-
-    // TODO: pop out eventID, actionTaken, definitelyBad features
-    ig.buffer_sl->indices.push_back(70); // TODO: change to feedback_namespace
-    for (auto& a : ig.buffer_sl->indices) {
-      std::cout << a << std::endl;
-    }
-    ig.buffer_sl->feature_space[70].push_back(1, 777); // feature name 777 value 1 // TODO: change 70 to feedback_namespace
-    std::cout << "[IGL] psi predict features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
-
-    ig.decoder_learner->predict(*ig.buffer_sl, 0);
-    std::cout << "[IGL] psi pred:" << ig.buffer_sl->pred.scalar << std::endl;
-
-    // 4. Update the label in es
-    auto psi_pred = ig.buffer_sl->pred.scalar;
-    float fake_cost = 0.f;
-
-    if (psi_pred * 2 > 1) {
-      // extreme state
-      // TODO: get Definitely Bad from feedback example
-      bool is_neg = 1;
-      fake_cost = -ig.p_unlabeled_prior + is_neg * (1 + ig.p_unlabeled_prior); // TODO: update to latest version
-    }
-
-    // 5. Train pi policy
-    std::cout << "[IGL] chosen_action_idx: " << chosen_action_idx << std::endl;
-    ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
-    base.learn(ec_seq, 1);
-  } else {
-    // TODO: throw error if example has no chosen action?
-  }
+  // 5. Train pi policy
+  ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
+  std::cout << "[IGL] chosen action prob: " << ec_seq[chosen_action_idx]->l.cb.costs[0].probability << std::endl;
+  // base.learn(ec_seq, 1);
 }
 
 void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
@@ -160,14 +164,13 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   ld->buffer_sl = VW::alloc_examples(1);
 
-
   // Ensure cb_explore_adf so we are reducing to something useful.
   // Question: are cb_adf and cb_explore_adf using same stack? Can we support both?
   if (!options.was_supplied("cb_explore_adf")) { options.insert("cb_explore_adf", ""); }
 
   auto* pi = as_multiline(stack_builder.setup_base_learner());
 
-  std::cout << "pi policy is multiline: " << pi->is_multiline() << std::endl;
+  std::cout << "[IGL] pi policy is multiline: " << pi->is_multiline() << std::endl;
 
   // 1. fetch already allocated coin reduction
   std::vector<std::string> enabled_reductions;
@@ -184,7 +187,8 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   // 2. prepare args for second stack
   // TODO: construct psi args from pi args
-  std::string psi_args = "--quiet --link=logistic --loss_function=logistic --cubic UAF --coin";
+  std::string psi_args = "--quiet --link=logistic --loss_function=logistic --coin"; //TODO: Add back --cubic
+
   int argc = 0;
   char** argv = to_argv_escaped(psi_args, argc);
 
@@ -193,7 +197,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
     [](VW::config::options_i* ptr) { delete ptr; });
 
   assert(psi_options->was_supplied("cb_adf") == false);
-  assert(psi_options->was_supplied("loss_function") == true);
+  // assert(psi_options->was_supplied("loss_function") == true);
 
   std::unique_ptr<custom_builder> psi_builder = VW::make_unique<custom_builder>(ftrl_coin);
   //VW::workspace temp(VW::io::create_null_logger());
@@ -201,14 +205,21 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   // assuming parser gets destroyed by workspace
   ld->temp->example_parser = new parser{all->example_parser->example_queue_limit, all->example_parser->strict_parse};
   ld->temp->sd = new shared_data(); //TODO: separate sd or shared?
-  ld->temp->loss = get_loss_function(*ld->temp, "logistic", 0.f, 1.f); // TODO: min is -1 or 0?
+  ld->temp->loss = get_loss_function(*ld->temp, "logistic", -1.f, 1.f); // TODO: min is -1 or 0? // for scorer
+  // ld->temp->weights.dense_weights = std::move(all->weights.dense_weights);
+
   psi_builder->delayed_state_attach(*ld->temp, *psi_options);
   ld->decoder_learner = as_singleline(psi_builder->setup_base_learner());
+  ld->ftrl_base = static_cast<ftrl*>(ftrl_coin->get_internal_type_erased_data_pointer_test_use_only());
 
   for (auto& interaction : all->interactions) {
     interaction.push_back(feedback_namespace);
+    // interaction.push_back(70); // TODO: change back to feedback ns
     ld->psi_interactions.push_back(interaction);
   }
+
+  std::cout << "[IGL] interations:" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
+
 
   ld->extent_interactions = &all->extent_interactions; // TODO: do we care about full ns interaction?
 
