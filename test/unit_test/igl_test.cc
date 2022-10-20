@@ -128,14 +128,16 @@ BOOST_AUTO_TEST_CASE(verify_igl_weights_with_two_examples)
 {
   std::vector<std::vector<std::string>> igl_examples = {
     {
-      "0:0.5:0.8 |User user=Tom time_of_day=morning |Action article=sports",
-      " |User user=Tom time_of_day=morning |Action article=politics",
-      " |User user=Tom time_of_day=morning |Action article=music"
+      "shared |User user=Tom time_of_day=morning",
+      "0:0.5:0.8 |Action article=sports",
+      " |Action article=politics",
+      " |Action article=music"
     },
     {
-      " |User user=Anna time_of_day=afternoon |Action article=sports",
-      "0:-1:0.1 |User user=Anna time_of_day=afternoon |Action article=politics",
-      " |User user=Anna time_of_day=afternoon |Action article=music"
+      "shared |User user=Anna time_of_day=afternoon",
+      " |Action article=sports",
+      "0:-1:0.1 |Action article=politics",
+      " |Action article=music"
     }
   };
 
