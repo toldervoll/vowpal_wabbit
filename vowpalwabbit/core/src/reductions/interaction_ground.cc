@@ -21,7 +21,6 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
-using namespace CB_ALGS;
 
 namespace
 {
@@ -30,13 +29,13 @@ struct interaction_ground
   float p_unlabeled_prior = 0.5f;
   VW::LEARNER::single_learner* decoder_learner = nullptr;
   VW::example* buffer_sl = nullptr; // TODO: rename this. This is buffer single line example
-  VW::example* buffer_sl2 = nullptr; // TODO: rename this. This is buffer single line example
 
   std::vector<std::vector<namespace_index>> psi_interactions;
   std::vector<std::vector<extent_term>>* extent_interactions;
 
   std::unique_ptr<VW::workspace> temp; // TODO: rename temp
   ftrl* ftrl_base;
+
   ~interaction_ground() {
     VW::dealloc_examples(buffer_sl, 1);
   }
@@ -59,8 +58,6 @@ void empty_example(example& ec)
 
 void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  // VW::workspace* original = ig.ftrl_base->all;
-  // ig.ftrl_base->all = ig.temp.get();
   std::swap(ig.ftrl_base->all->loss, ig.temp->loss);
   std::swap(ig.ftrl_base->all->sd, ig.temp->sd);
 
@@ -80,17 +77,14 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, *ex_action);
     auto feature_hash = VW::hash_feature(*ig.ftrl_base->all, "click", VW::hash_space(*ig.ftrl_base->all, "Feedback"));
     auto fh2 = 1328936; // hash for "|Feedback click"
-    // ig.buffer_sl->indices.push_back(70);
-    // ig.buffer_sl->feature_space[70].push_back(1, fh2); // feature name 777 value 1
     ig.buffer_sl->indices.push_back(feedback_namespace);
-    ig.buffer_sl->feature_space[feedback_namespace].push_back(1, fh2); // feature name 777 value 1
+    ig.buffer_sl->feature_space[feedback_namespace].push_back(1, fh2); // TODO: remove hardcode fh2
 
     std::cout << "[IGL] psi learn features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
 
     // 1. learning psi
     float label = -1.f;
     // TODO: update the importance for each example
-    // Need to pass in the pa distribution
     float importance = 0.6f;
     if (!ex_action->l.cb.costs.empty()) {
       label = 1.f;
@@ -99,23 +93,21 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     ig.buffer_sl->l.simple.label = label;
     ig.buffer_sl->weight = importance;
 
-    std::cout << label << ", " << importance << std::endl;
+    std::cout << "[IGL] sl label: " << label << ", importance weight:" << importance << std::endl;
 
     ig.buffer_sl->interactions = &ig.psi_interactions;
-    // ig.buffer_sl->interactions = &ig.ftrl_base->all->interactions;
     ig.buffer_sl->extent_interactions = ig.extent_interactions; // TODO(low pri): not reuse ig.extent_interactions, need to add in feedback
 
     // 2. psi learn
     ig.decoder_learner->learn(*ig.buffer_sl, 0);
 
     if (!ex_action->l.cb.costs.empty()) {
-     psi_pred = ig.buffer_sl->pred.scalar;
+      psi_pred = ig.buffer_sl->pred.scalar;
     }
   }
-  // ig.ftrl_base->all = original;
+
   std::swap(ig.ftrl_base->all->loss, ig.temp->loss);
   std::swap(ig.ftrl_base->all->sd, ig.temp->sd);
-
 
   float fake_cost = 0.f;
 
@@ -137,7 +129,7 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
   base.predict(ec_seq, 1);
 }
-}  // namespace
+} // namespace
 
 // this impl only needs (re-use instantiated coin instead of ftrl func, scorer setup func, count_label 
 // setup func) -> remove all other reduction setups
@@ -151,10 +143,10 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   option_group_definition new_options("[Reduction] Interaction Grounded Learning");
   new_options.add(make_option("experimental_igl", igl_option)
-                      .keep()
-                      .necessary()
-                      .help("Do Interaction Grounding with multiline action dependent features")
-                      .experimental());
+                  .keep()
+                  .necessary()
+                  .help("Do Interaction Grounding with multiline action dependent features")
+                  .experimental());
 
   if (!options.add_parse_and_check_necessary(new_options)) { return nullptr; }
 
@@ -197,7 +189,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
     [](VW::config::options_i* ptr) { delete ptr; });
 
   assert(psi_options->was_supplied("cb_adf") == false);
-  // assert(psi_options->was_supplied("loss_function") == true);
+  assert(psi_options->was_supplied("loss_function") == true);
 
   std::unique_ptr<custom_builder> psi_builder = VW::make_unique<custom_builder>(ftrl_coin);
   //VW::workspace temp(VW::io::create_null_logger());
@@ -214,7 +206,6 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   for (auto& interaction : all->interactions) {
     interaction.push_back(feedback_namespace);
-    // interaction.push_back(70); // TODO: change back to feedback ns
     ld->psi_interactions.push_back(interaction);
   }
 
