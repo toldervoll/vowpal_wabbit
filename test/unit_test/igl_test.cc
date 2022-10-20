@@ -123,3 +123,94 @@ BOOST_AUTO_TEST_CASE(verify_igl_model_has_same_weights_as_two_separate_vw_instan
   BOOST_CHECK_EQUAL(sl_weights_vector.size(), 3); // TODO: 9 rows starts with 0
   BOOST_CHECK(sl_weights_vector == igl_weights_vector);
 }
+
+BOOST_AUTO_TEST_CASE(verify_igl_weights_with_two_examples)
+{
+  std::vector<std::vector<std::string>> igl_examples = {
+    {
+      "0:0.5:0.8 |User user=Tom time_of_day=morning |Action article=sports",
+      " |User user=Tom time_of_day=morning |Action article=politics",
+      " |User user=Tom time_of_day=morning |Action article=music"
+    },
+    {
+      " |User user=Anna time_of_day=afternoon |Action article=sports",
+      "0:-1:0.1 |User user=Anna time_of_day=afternoon |Action article=politics",
+      " |User user=Anna time_of_day=afternoon |Action article=music"
+    }
+  };
+
+  std::vector<std::vector<std::string>> sl_examples = {
+    {
+      "1 0.6 |User user=Tom time_of_day=morning |Action article=sports |Feedback click:1",
+      "-1 0.6 |User user=Tom time_of_day=morning |Action article=politics |Feedback click:1",
+      "-1 0.6 |User user=Tom time_of_day=morning |Action article=music |Feedback click:1"
+    },
+    {
+      "-1 0.6 |User user=Anna time_of_day=afternoon |Action article=sports |Feedback click:1",
+      "1 0.6 |User user=Anna time_of_day=afternoon |Action article=politics |Feedback click:1",
+      "-1 0.6 |User user=Anna time_of_day=afternoon |Action article=music |Feedback click:1",
+    }
+  };
+
+  auto* vw_igl = VW::initialize(
+    "--cb_explore_adf --coin --experimental_igl -q UA --noconstant" // --epsilon 0.2
+  );
+
+  auto* vw_sl = VW::initialize(
+    "--link=logistic --loss_function=logistic --coin --noconstant --cubic UAF"
+  );
+
+  for (auto& igl_multi_ex_str : igl_examples) {
+    VW::multi_ex igl_vw_example;
+    for (const std::string& ex : igl_multi_ex_str) {
+      igl_vw_example.push_back(VW::read_example(*vw_igl, ex));
+    }
+    vw_igl->learn(igl_vw_example);
+    vw_igl->finish_example(igl_vw_example);
+  }
+
+  for (auto& sl_ex_str : sl_examples) {
+    for (auto& ex_str : sl_ex_str) {
+      VW::example* ex = VW::read_example(*vw_sl, ex_str);
+      vw_sl->learn(*ex);
+      vw_sl->finish_example(*ex);
+    }
+  }
+
+  auto& igl_weights = vw_igl->weights.dense_weights;
+  auto& sl_weights = vw_sl->weights.dense_weights;
+
+  auto igl_iter = igl_weights.begin();
+  auto sl_iter = sl_weights.begin();
+
+  std::vector<std::tuple<float, float, float, float, float, float>> igl_weights_vector;
+  std::vector<std::tuple<float, float, float, float, float, float>> sl_weights_vector;
+
+  // IGL weights
+  if (*igl_iter != 0.0f) {
+    igl_weights_vector.emplace_back(*igl_iter[0], *igl_iter[1], *igl_iter[2], *igl_iter[3], *igl_iter[4], *igl_iter[5]);
+  }
+
+  auto igl_end = igl_weights.end();
+
+  while (igl_iter.next_non_zero(igl_end) < igl_end) {
+    igl_weights_vector.emplace_back(*igl_iter[0], *igl_iter[1], *igl_iter[2], *igl_iter[3], *igl_iter[4], *igl_iter[5]);
+  }
+  std::sort(igl_weights_vector.begin(), igl_weights_vector.end());
+
+  // single line weights
+  if (*sl_iter != 0.0f) {
+    sl_weights_vector.emplace_back(*sl_iter[0], *sl_iter[1], *sl_iter[2], *sl_iter[3], *sl_iter[4], *sl_iter[5]);
+  }
+  auto sl_end = sl_weights.end();
+
+  while (sl_iter.next_non_zero(sl_end) < sl_end) {
+    sl_weights_vector.emplace_back(*sl_iter[0], *sl_iter[1], *sl_iter[2], *sl_iter[3], *sl_iter[4], *sl_iter[5]);
+  }
+  std::sort(sl_weights_vector.begin(), sl_weights_vector.end());
+  VW::finish(*vw_igl);
+  VW::finish(*vw_sl);
+
+  BOOST_CHECK_EQUAL(sl_weights_vector.size(), 8); // all rows are compared
+  BOOST_CHECK(sl_weights_vector == igl_weights_vector);
+}
