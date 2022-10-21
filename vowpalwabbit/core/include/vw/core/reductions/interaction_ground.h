@@ -8,6 +8,7 @@
 #include <set>
 #include <vector>
 #include "vw/core/constant.h"
+#include "vw/core/reductions/ftrl.h"
 
 namespace VW
 {
@@ -46,5 +47,7 @@ struct custom_builder : VW::default_reduction_stack_setup
  * @return VW::LEARNER::base_learner* learner if this reduction is active, nullptr otherwise
  */
 VW::LEARNER::base_learner* interaction_ground_setup(VW::setup_base_i& stack_builder);
+void swap_ftrl(ftrl* source, ftrl* destination); // convert this to swap and try
+
 }  // namespace reductions
 }  // namespace VW

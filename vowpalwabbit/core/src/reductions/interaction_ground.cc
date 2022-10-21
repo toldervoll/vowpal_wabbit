@@ -17,7 +17,6 @@
 #include "vw/core/vw.h"
 #include "vw/core/loss_functions.h"
 #include "details/automl_impl.h"
-#include "vw/core/reductions/ftrl.h"
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -33,9 +32,11 @@ struct interaction_ground
   std::vector<std::vector<namespace_index>> psi_interactions;
   std::vector<std::vector<extent_term>>* extent_interactions;
 
-  std::unique_ptr<VW::workspace> temp; // TODO: rename temp
-  ftrl* ftrl_base;
+  std::unique_ptr<VW::workspace> sl_all;
+  ftrl* ftrl_base; // this one get automatically save resume
 
+  std::shared_ptr<ftrl> ftrl2; // TODO: we have save resume this thing separately
+  
   ~interaction_ground() {
     VW::dealloc_examples(buffer_sl, 1);
   }
@@ -58,8 +59,8 @@ void empty_example(example& ec)
 
 void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  std::swap(ig.ftrl_base->all->loss, ig.temp->loss);
-  std::swap(ig.ftrl_base->all->sd, ig.temp->sd);
+  std::swap(ig.ftrl_base->all->loss, ig.sl_all->loss);
+  std::swap(ig.ftrl_base->all->sd, ig.sl_all->sd);
 
   float psi_pred = 0.f;
   int chosen_action_idx = 0;
@@ -75,7 +76,7 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     empty_example(*ig.buffer_sl);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, *ex_action);
-    auto feature_hash = VW::hash_feature(*ig.ftrl_base->all, "click", VW::hash_space(*ig.ftrl_base->all, "Feedback"));
+    // auto feature_hash = VW::hash_feature(*ig.ftrl_base->all, "click", VW::hash_space(*ig.ftrl_base->all, "Feedback"));
     auto fh2 = 1328936; // hash for "|Feedback click"
     ig.buffer_sl->indices.push_back(feedback_namespace);
     ig.buffer_sl->feature_space[feedback_namespace].push_back(1, fh2); // TODO: remove hardcode fh2
@@ -106,11 +107,14 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     }
   }
 
-  std::swap(ig.ftrl_base->all->loss, ig.temp->loss);
-  std::swap(ig.ftrl_base->all->sd, ig.temp->sd);
+  std::swap(ig.ftrl_base->all->loss, ig.sl_all->loss);
+  std::swap(ig.ftrl_base->all->sd, ig.sl_all->sd);
+
+  // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
 
   float fake_cost = 0.f;
-
+  std::cout << "[IGL] psi pred: " << psi_pred << std::endl;
   // 4. update multi line ex label
   if (psi_pred * 2 > 1) {
     // extreme state
@@ -122,17 +126,62 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   // 5. Train pi policy
   ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
   std::cout << "[IGL] chosen action prob: " << ec_seq[chosen_action_idx]->l.cb.costs[0].probability << std::endl;
-  // base.learn(ec_seq, 1);
+  std::cout << "[IGL] fake cost: " << fake_cost << std::endl;
+
+  base.learn(ec_seq, 1);
+  // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+
 }
 
 void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
   base.predict(ec_seq, 1);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
 }
 } // namespace
 
 // this impl only needs (re-use instantiated coin instead of ftrl func, scorer setup func, count_label 
 // setup func) -> remove all other reduction setups
+
+void copy_ftrl(ftrl* source, ftrl* destination) { // convert this to swap and try
+  destination->all = source->all;
+  destination->ftrl_alpha = source->ftrl_alpha;
+  destination->ftrl_beta = source->ftrl_beta;
+  destination->data.update = source->data.update;
+  destination->data.ftrl_alpha = source->data.ftrl_alpha;
+  destination->data.ftrl_beta = source->data.ftrl_beta;
+  destination->data.l1_lambda = source->data.l1_lambda;
+  destination->data.l2_lambda = source->data.l2_lambda;
+  destination->data.predict = source->data.predict;
+  destination->data.normalized_squared_norm_x = source->data.normalized_squared_norm_x;
+  destination->data.average_squared_norm_x = source->data.average_squared_norm_x;
+  destination->no_win_counter = source->no_win_counter;
+  destination->early_stop_thres = source->early_stop_thres;
+  destination->ftrl_size = source->ftrl_size;
+  destination->total_weight = source->total_weight;
+  destination->normalized_sum_norm_x = source->normalized_sum_norm_x;
+}
+
+void VW::reductions::swap_ftrl(ftrl* source, ftrl* destination) { // convert this to swap and try
+  std::swap(destination->all, source->all);
+  std::swap(destination->ftrl_alpha , source->ftrl_alpha);
+  std::swap(destination->ftrl_beta , source->ftrl_beta);
+  std::swap(destination->data.update , source->data.update);
+  std::swap(destination->data.ftrl_alpha , source->data.ftrl_alpha);
+  std::swap(destination->data.ftrl_beta , source->data.ftrl_beta);
+  std::swap(destination->data.l1_lambda , source->data.l1_lambda);
+  std::swap(destination->data.l2_lambda , source->data.l2_lambda);
+  std::swap(destination->data.predict , source->data.predict);
+  std::swap(destination->data.normalized_squared_norm_x , source->data.normalized_squared_norm_x);
+  std::swap(destination->data.average_squared_norm_x , source->data.average_squared_norm_x);
+  std::swap(destination->no_win_counter , source->no_win_counter);
+  std::swap(destination->early_stop_thres , source->early_stop_thres);
+  std::swap(destination->ftrl_size , source->ftrl_size);
+  std::swap(destination->total_weight , source->total_weight);
+  std::swap(destination->normalized_sum_norm_x , source->normalized_sum_norm_x);
+}
 
 base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
@@ -192,17 +241,20 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   assert(psi_options->was_supplied("loss_function") == true);
 
   std::unique_ptr<custom_builder> psi_builder = VW::make_unique<custom_builder>(ftrl_coin);
-  //VW::workspace temp(VW::io::create_null_logger());
-  ld->temp = VW::make_unique<VW::workspace>(VW::io::create_null_logger());
+  //VW::workspace sl_all(VW::io::create_null_logger());
+  ld->sl_all = VW::make_unique<VW::workspace>(VW::io::create_null_logger());
   // assuming parser gets destroyed by workspace
-  ld->temp->example_parser = new parser{all->example_parser->example_queue_limit, all->example_parser->strict_parse};
-  ld->temp->sd = new shared_data(); //TODO: separate sd or shared?
-  ld->temp->loss = get_loss_function(*ld->temp, "logistic", -1.f, 1.f); // TODO: min is -1 or 0? // for scorer
-  // ld->temp->weights.dense_weights = std::move(all->weights.dense_weights);
+  ld->sl_all->example_parser = new parser{all->example_parser->example_queue_limit, all->example_parser->strict_parse};
+  ld->sl_all->sd = new shared_data(); //TODO: separate sd or shared?
+  ld->sl_all->loss = get_loss_function(*ld->sl_all, "logistic", -1.f, 1.f); // TODO: min is -1 or 0? // for scorer
+  // ld->sl_all->weights.dense_weights = std::move(all->weights.dense_weights);
 
-  psi_builder->delayed_state_attach(*ld->temp, *psi_options);
+  psi_builder->delayed_state_attach(*ld->sl_all, *psi_options);
   ld->decoder_learner = as_singleline(psi_builder->setup_base_learner());
   ld->ftrl_base = static_cast<ftrl*>(ftrl_coin->get_internal_type_erased_data_pointer_test_use_only());
+  // auto other_ftrl = VW::make_unique<ftrl>();
+  ld->ftrl2 = std::make_shared<ftrl>(); //other_ftrl.release()
+  copy_ftrl(ld->ftrl_base, ld->ftrl2.get());
 
   for (auto& interaction : all->interactions) {
     interaction.push_back(feedback_namespace);
