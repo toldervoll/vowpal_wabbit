@@ -283,6 +283,10 @@ public:
 
   void* get_internal_type_erased_data_pointer_test_use_only() { return learner_data.get(); }
 
+  void swap_learner_data(std::shared_ptr<void> other_learner_data) {
+    learner_data.swap(other_learner_data);
+  }
+
   // For all functions here that invoke stored function pointers,
   // NO_SANITIZE_UNDEFINED is needed because the function pointer's type may be
   // cast to something different from the original function's signature.
