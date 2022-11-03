@@ -44,6 +44,11 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
     ec_seq.erase(ec_seq.begin());
     // merge sequences
     for (auto& example : ec_seq) { LabelDict::add_example_namespaces_from_example(*example, *shared_example); }
+    // TODO: remove this hack: sending feedback as the last example
+    // for (size_t i = 0; i < ec_seq.size() - 1; i++) {
+    //   auto example = ec_seq[i];
+    //   LabelDict::add_example_namespaces_from_example(*example, *shared_example);
+    // }
     std::swap(ec_seq[0]->pred, shared_example->pred);
     std::swap(ec_seq[0]->tag, shared_example->tag);
   }
@@ -53,6 +58,10 @@ void predict_or_learn(sfm_data& data, VW::LEARNER::multi_learner& base, VW::mult
     if (has_example_header)
     {
       for (auto& example : ec_seq) { LabelDict::del_example_namespaces_from_example(*example, *shared_example); }
+      // for (size_t i = 0; i < ec_seq.size() - 1; i++) {
+      //   auto example = ec_seq[i];
+      //   LabelDict::del_example_namespaces_from_example(*example, *shared_example);
+      // }
       std::swap(shared_example->pred, ec_seq[0]->pred);
       std::swap(shared_example->tag, ec_seq[0]->tag);
       ec_seq.insert(ec_seq.begin(), shared_example);

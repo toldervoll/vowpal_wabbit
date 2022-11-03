@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(igl_learning_converges)
   VW::finish(*vw_igl);
 }
 
-BOOST_AUTO_TEST_CASE(verify_igl_model_has_same_weights_as_two_separate_vw_instances)
+BOOST_AUTO_TEST_CASE(verify_decoder_model_with_one_text_example)
 {
   example_vector igl_multi = get_multiline_examples(1);
   example_vector sl_examples = get_sl_examples(1);
@@ -295,10 +295,9 @@ BOOST_AUTO_TEST_CASE(verify_igl_model_has_same_weights_as_two_separate_vw_instan
 
   BOOST_CHECK_EQUAL(sl_weights_vector.size(), 3); // TODO: 9 rows starts with 0
   BOOST_CHECK(sl_weights_vector == igl_weights_vector);
-  print_weights(igl_weights_vector);
 }
 
-BOOST_AUTO_TEST_CASE(verify_igl_weights_with_two_examples)
+BOOST_AUTO_TEST_CASE(verify_decoder_model_with_two_text_examples)
 {
   example_vector igl_examples = get_multiline_examples(2);
   example_vector sl_examples = get_sl_examples(2);
@@ -310,7 +309,7 @@ BOOST_AUTO_TEST_CASE(verify_igl_weights_with_two_examples)
   BOOST_CHECK(sl_weights_vector == igl_weights_vector);
 }
 
-BOOST_AUTO_TEST_CASE(one_dsjson_example_equals_to_multiline_example)
+BOOST_AUTO_TEST_CASE(verify_deocer_model_with_one_dsjson_example)
 {
   std::vector<std::string> dsjson_examples = get_dsjson_examples(1);
   ftrl_weights_vector dsjson_weights_vector = train_dsjson_igl(dsjson_examples);
@@ -321,7 +320,7 @@ BOOST_AUTO_TEST_CASE(one_dsjson_example_equals_to_multiline_example)
   BOOST_CHECK(dsjson_weights_vector == multi_weights_vector);
 }
 
-BOOST_AUTO_TEST_CASE(two_dsjson_examples_equal_to_multiline_examples)
+BOOST_AUTO_TEST_CASE(verify_decoder_model_with_two_dsjson_examples)
 {
   std::vector<std::string> dsjson_examples = get_dsjson_examples(2);
   ftrl_weights_vector dsjson_weights_vector = train_dsjson_igl(dsjson_examples);
@@ -331,4 +330,90 @@ BOOST_AUTO_TEST_CASE(two_dsjson_examples_equal_to_multiline_examples)
   BOOST_CHECK_EQUAL(multi_weights_vector.size(), 8);
   BOOST_CHECK(dsjson_weights_vector == multi_weights_vector);
   print_weights(dsjson_weights_vector);
+}
+
+BOOST_AUTO_TEST_CASE(test_predict_learn_with_dsjson)
+{
+  // std::vector<std::string> ex_vector = {
+  //   R"({
+  //     "_label_cost": 0.5,
+  //     "_label_probability": 0.8,
+  //     "_label_Action": 1,
+  //     "_labelIndex": 0,
+  //     "o": [
+  //       {
+  //         "v": 1,
+  //         "EventId": "4b49f8f0-92fc-401f-ad08-13fddd99a5cf",
+  //         "ActionTaken": false
+  //       }
+  //     ],
+  //     "Timestamp": "2022-03-09T00:31:34.0000000Z",
+  //     "Version": "1",
+  //     "EventId": "4b49f8f0-92fc-401f-ad08-13fddd99a5cf",
+  //     "a": [
+  //       0,
+  //       1,
+  //       2
+  //     ],
+  //     "c": {
+  //       "User": {
+  //         "user=Tom": "",
+  //         "time_of_day=morning": ""
+  //       },
+  //       "_multi": [
+  //         {
+  //           "Action": {
+  //             "article=sports": ""
+  //           }
+  //         },
+  //         {
+  //           "Action": {
+  //             "article=politics": ""
+  //           }
+  //         },
+  //         {
+  //           "Action": {
+  //             "article=music": ""
+  //           }
+  //         },
+  //         {
+  //           "Feedback": {
+  //             "click": 1
+  //           }
+  //         }
+  //       ]
+  //     },
+  //     "p": [
+  //       0.8,
+  //       0.1,
+  //       0.1
+  //     ],
+  //     "VWState": {
+  //       "m": "N/A"
+  //     }
+  //   })"
+  // };
+
+  std::vector<std::string> ex_vector = {
+    R"(
+      {"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id": "0"}, "_multi": [{"a": {"id": "0"}}, {"a": {"id": "4"}}, {"a": {"id": "5"}}, {"a": {"id": "1"}}]}, "p": [0.25, 0.25, 0.25, 0.25]}
+    )"
+  };
+  ftrl_weights_vector hacky_dsjson_weights_vector = train_dsjson_igl(ex_vector);
+  print_weights(hacky_dsjson_weights_vector);
+}
+
+BOOST_AUTO_TEST_CASE(test_feedback_hash)
+{
+  // click feature hash: 1328936
+  // like: 712760
+  // dislike: 707752
+  // none: 1617376
+  // banana: 419984
+  example_vector sl_examples = {
+    {
+      " |Feedback banana:1"
+    }
+  };
+  auto weights = train_sl_igl(sl_examples);
 }

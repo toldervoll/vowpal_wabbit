@@ -72,12 +72,23 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     chosen_action_idx = std::distance(ec_seq.begin(), it);
   }
 
+  // auto feature_hash = VW::hash_feature(*ig.ftrl_base->all, "click", VW::hash_space(*ig.ftrl_base->all, "Feedback"));
+  auto fh2 = 1328936; // hash for "|Feedback click"
+
+  // auto feedback_ex = ec_seq.back(); // TODO: refactor this. Currently assuming last example is feedback example
+  
+  // ec_seq.pop_back();
+  // auto ns_iter = feedback_ex->indices.begin();
+  // auto fh = feedback_ex->feature_space.at(*ns_iter).indices.data();
+  // auto fh_val = *fh / 2; //TODO: verify if this is right. 2 is problem multiplier. 
+
+  // std::string feedback_feature = feedback_ex->feature_space.at(*ns_iter).space_names[0].name;
+  // std::cout << "[IGL] hash value: " << fh_val << std::endl;
+
   for (auto& ex_action: ec_seq) {
     empty_example(*ig.buffer_sl);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, *ex_action);
-    // auto feature_hash = VW::hash_feature(*ig.ftrl_base->all, "click", VW::hash_space(*ig.ftrl_base->all, "Feedback"));
-    auto fh2 = 1328936; // hash for "|Feedback click"
     ig.buffer_sl->indices.push_back(feedback_namespace);
     ig.buffer_sl->feature_space[feedback_namespace].push_back(1, fh2); // TODO: remove hardcode fh2
 
@@ -114,7 +125,6 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
 
   float fake_cost = 0.f;
-  std::cout << "[IGL] psi pred: " << psi_pred << std::endl;
   // 4. update multi line ex label
   if (psi_pred * 2 > 1) {
     // extreme state
@@ -125,13 +135,15 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 
   // 5. Train pi policy
   ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
-  std::cout << "[IGL] chosen action prob: " << ec_seq[chosen_action_idx]->l.cb.costs[0].probability << std::endl;
-  std::cout << "[IGL] fake cost: " << fake_cost << std::endl;
+  std::cout << "[IGL] psi pred: " << psi_pred << ","
+            << "chosen action prob: " << ec_seq[chosen_action_idx]->l.cb.costs[0].probability << ", "
+            << "fake cost: " << fake_cost
+            << std::endl;
 
   base.learn(ec_seq, 1);
   // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
   VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
-
+  // ec_seq.push_back(feedback_ex);
 }
 
 void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
@@ -263,7 +275,6 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   std::cout << "[IGL] interations:" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
 
-
   ld->extent_interactions = &all->extent_interactions; // TODO: do we care about full ns interaction?
 
   // TODO: free argc and argv
@@ -298,7 +309,6 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
                 .set_output_prediction_type(prediction_type_t::action_scores)
                 .set_input_prediction_type(prediction_type_t::action_scores)
                 .build();
-
   // TODO: assert ftrl is the base, fail otherwise
   // VW::reductions::util::fail_if_enabled
 
