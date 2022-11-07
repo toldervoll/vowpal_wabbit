@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(test_predict_learn_with_dsjson)
 
   std::vector<std::string> ex_vector = {
     R"(
-      {"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id": "0"}, "_multi": [{"a": {"id": "0"}}, {"a": {"id": "4"}}, {"a": {"id": "5"}}, {"a": {"id": "1"}}]}, "p": [0.25, 0.25, 0.25, 0.25]}
+      {"_label_cost":0,"_label_probability":0.8,"_label_Action":1,"_labelIndex":0,"o":[{"v":{"v":"click"},"EventId":"4b49f8f0-92fc-401f-ad08-13fddd99a5cf","ActionTaken":false}],"Timestamp":"2022-03-09T00:31:34.0000000Z","Version":"1","EventId":"4b49f8f0-92fc-401f-ad08-13fddd99a5cf","a":[0,1,2],"c":{"User":{"user=Tom":"","time_of_day=morning":""},"_multi":[{"Action":{"article=sports":""}},{"Action":{"article=politics":""}},{"Action":{"article=music":""}}]},"p":[0.8,0.1,0.1],"VWState":{"m":"N/A"}}
     )"
   };
   ftrl_weights_vector hacky_dsjson_weights_vector = train_dsjson_igl(ex_vector);

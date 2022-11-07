@@ -34,7 +34,6 @@ struct interaction_ground
 
   std::unique_ptr<VW::workspace> sl_all;
   ftrl* ftrl_base; // this one get automatically save resume
-
   std::shared_ptr<ftrl> ftrl2; // TODO: we have save resume this thing separately
   
   ~interaction_ground() {
@@ -121,9 +120,6 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   std::swap(ig.ftrl_base->all->loss, ig.sl_all->loss);
   std::swap(ig.ftrl_base->all->sd, ig.sl_all->sd);
 
-  // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
-  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
-
   float fake_cost = 0.f;
   // 4. update multi line ex label
   if (psi_pred * 2 > 1) {
@@ -140,6 +136,8 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
             << "fake cost: " << fake_cost
             << std::endl;
 
+  // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
   base.learn(ec_seq, 1);
   // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
   VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
@@ -271,6 +269,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   for (auto& interaction : all->interactions) {
     interaction.push_back(feedback_namespace);
     ld->psi_interactions.push_back(interaction);
+    interaction.pop_back();
   }
 
   std::cout << "[IGL] interations:" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;

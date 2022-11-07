@@ -214,7 +214,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_WE] += (-gradient * w[W_XT]);
 
   w[W_XT] /= d.average_squared_norm_x;
-  std::cout << "inner update: " << d.update << "x: " << x <<std::endl;
+  std::cout << "inner update: " << d.update << ", x: " << x <<std::endl;
   std::cout << "w[0]: " << w[0] << ", "
     << "w[1]: " << w[1] << ", "
     << "w[2]: " << w[2] << ", "
@@ -239,7 +239,7 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 
-  std::cout << "[ftrl] " << "predict: " << b.data.predict << ", "
+  std::cout << "[ftrl] predict: " << b.data.predict << ", "
     << "normalized_sum_norm_x: " << b.normalized_sum_norm_x << ", "
     << "total weight: " <<  b.total_weight << ", "
     << "avg squared norm: " << b.data.average_squared_norm_x << ", "
