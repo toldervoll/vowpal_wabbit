@@ -10,11 +10,11 @@
 struct vw_dbg
 {
   // clang-format off
-  static constexpr bool default_log =         false;
-  static constexpr bool learner =             false;
+  static constexpr bool default_log =         false; // igl debugging
+  static constexpr bool learner =             false; // igl debugging
   static constexpr bool gd =                  false;
   static constexpr bool gd_predict =          false;
-  static constexpr bool scorer =              false;
+  static constexpr bool scorer =              false; // igl debugging
   static constexpr bool search =              false;
   static constexpr bool binary =              false;
   static constexpr bool cb_adf =              false;
@@ -33,11 +33,13 @@ struct vw_dbg
   static constexpr bool cb_sample_pdf =       false;
   static constexpr bool ccb =                 false;
   static constexpr bool cb_sample =           false;
+  static constexpr bool igl =                 false; // igl debugging
+  static constexpr bool ftrl =                false; // igl debugging
   // clang-format on
 
   static constexpr bool track_stack = default_log | learner | search | gd | gd_predict | binary | cb_adf | csoaa |
       cs_active | cats_tree | cats_pdf | cats | cb_explore_pdf | cb_explore | cbify | get_pmf | sample_pdf |
-      cb_explore_get_pmf | cb_sample_pdf | ccb | scorer | cb_sample | csoaa_ldf;
+      cb_explore_get_pmf | cb_sample_pdf | ccb | scorer | cb_sample | csoaa_ldf | igl | ftrl;
 };
 
 #define VW_DEBUG_LOG vw_dbg::default_log

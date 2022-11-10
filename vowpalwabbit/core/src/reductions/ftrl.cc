@@ -4,6 +4,7 @@
 
 #include "vw/core/reductions/ftrl.h"
 
+#include "vw/core/debug_log.h"
 #include "vw/core/correctedMath.h"
 #include "vw/core/crossplat_compat.h"
 #include "vw/core/label_parser.h"
@@ -19,6 +20,9 @@
 #include <cfloat>
 #include <cmath>
 #include <string>
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::ftrl
 
 using namespace VW::LEARNER;
 using namespace VW::config;
@@ -214,7 +218,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_WE] += (-gradient * w[W_XT]);
 
   w[W_XT] /= d.average_squared_norm_x;
-  std::cout << "inner update: " << d.update << ", x: " << x <<std::endl;
+  std::cout << "[ftrl] inner update: " << d.update << ", x: " << x <<std::endl;
   std::cout << "w[0]: " << w[0] << ", "
     << "w[1]: " << w[1] << ", "
     << "w[2]: " << w[2] << ", "
@@ -225,6 +229,7 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
 
 void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
 {
+  VW_DBG(ec) << "coin_betting_predict.predict() ex#=" << ec.example_counter << ", offset=" << ec.ft_offset << std::endl;
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
@@ -239,7 +244,10 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 
-  std::cout << "[ftrl] predict: " << b.data.predict << ", "
+  VW_DBG(ec) << "coin_betting_predict.predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
+             << std::endl;
+
+  VW_DBG(ec)  << "coin_betting_predict.predict() " << b.data.predict << ", "
     << "normalized_sum_norm_x: " << b.normalized_sum_norm_x << ", "
     << "total weight: " <<  b.total_weight << ", "
     << "avg squared norm: " << b.data.average_squared_norm_x << ", "
@@ -275,9 +283,7 @@ void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  std::cout << "[ftrl before inner] update: " << b.data.update << std::endl;
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
-  std::cout << "[ftrl after inner] update" << b.data.update << std::endl; 
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because

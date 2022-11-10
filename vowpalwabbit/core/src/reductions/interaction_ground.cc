@@ -5,6 +5,7 @@
 #include "vw/core/reductions/interaction_ground.h"
 #include "vw/config/options_cli.h"
 
+#include "vw/core/debug_log.h"
 #include "vw/common/vw_exception.h"
 #include "vw/config/options.h"
 #include "vw/core/label_dictionary.h"
@@ -20,6 +21,9 @@
 
 using namespace VW::LEARNER;
 using namespace VW::config;
+
+#undef VW_DEBUG_LOG
+#define VW_DEBUG_LOG vw_dbg::igl
 
 namespace
 {
@@ -72,17 +76,17 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   }
 
   // auto feature_hash = VW::hash_feature(*ig.ftrl_base->all, "click", VW::hash_space(*ig.ftrl_base->all, "Feedback"));
-  auto fh2 = 1328936; // hash for "|Feedback click"
+  // auto fh2 = 1328936; // hash for "|Feedback click"
 
-  // auto feedback_ex = ec_seq.back(); // TODO: refactor this. Currently assuming last example is feedback example
-  
-  // ec_seq.pop_back();
-  // auto ns_iter = feedback_ex->indices.begin();
-  // auto fh = feedback_ex->feature_space.at(*ns_iter).indices.data();
-  // auto fh_val = *fh / 2; //TODO: verify if this is right. 2 is problem multiplier. 
+  auto feedback_ex = ec_seq.back(); // TODO: refactor this. Currently assuming last example is feedback example
+  ec_seq.pop_back();
+
+  auto ns_iter = feedback_ex->indices.begin();
+  auto fh = feedback_ex->feature_space.at(*ns_iter).indices.data();
+  auto fh2 = *fh / 2; //TODO: verify if this is right. 2 is problem multiplier. 
 
   // std::string feedback_feature = feedback_ex->feature_space.at(*ns_iter).space_names[0].name;
-  // std::cout << "[IGL] hash value: " << fh_val << std::endl;
+  std::cout << "[IGL] hash value: " << fh2 << std::endl;
 
   for (auto& ex_action: ec_seq) {
     empty_example(*ig.buffer_sl);
@@ -90,6 +94,7 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, *ex_action);
     ig.buffer_sl->indices.push_back(feedback_namespace);
     ig.buffer_sl->feature_space[feedback_namespace].push_back(1, fh2); // TODO: remove hardcode fh2
+    ig.buffer_sl->_debug_current_reduction_depth = ex_action->_debug_current_reduction_depth;
 
     std::cout << "[IGL] psi learn features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
 
@@ -103,8 +108,6 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 
     ig.buffer_sl->l.simple.label = label;
     ig.buffer_sl->weight = importance;
-
-    std::cout << "[IGL] sl label: " << label << ", importance weight:" << importance << std::endl;
 
     ig.buffer_sl->interactions = &ig.psi_interactions;
     ig.buffer_sl->extent_interactions = ig.extent_interactions; // TODO(low pri): not reuse ig.extent_interactions, need to add in feedback
@@ -130,18 +133,16 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   }
 
   // 5. Train pi policy
-  ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
-  std::cout << "[IGL] psi pred: " << psi_pred << ","
-            << "chosen action prob: " << ec_seq[chosen_action_idx]->l.cb.costs[0].probability << ", "
-            << "fake cost: " << fake_cost
-            << std::endl;
+  // ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
+  // std::cout << "[IGL] psi pred: " << psi_pred << ","
+  //           << "chosen action prob: " << ec_seq[chosen_action_idx]->l.cb.costs[0].probability << ", "
+  //           << "fake cost: " << fake_cost
+  //           << std::endl;
 
-  // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
   VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
   base.learn(ec_seq, 1);
-  // ig.learner_ftrl->swap_learner_data(ig.ftrl2);
   VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
-  // ec_seq.push_back(feedback_ex);
+  ec_seq.push_back(feedback_ex);
 }
 
 void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
@@ -221,7 +222,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
 
   auto* pi = as_multiline(stack_builder.setup_base_learner());
 
-  std::cout << "[IGL] pi policy is multiline: " << pi->is_multiline() << std::endl;
+  // std::cout << "[IGL] pi policy is multiline: " << pi->is_multiline() << std::endl;
 
   // 1. fetch already allocated coin reduction
   std::vector<std::string> enabled_reductions;
@@ -272,7 +273,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
     interaction.pop_back();
   }
 
-  std::cout << "[IGL] interations:" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
+  // std::cout << "[IGL] interations:" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
 
   ld->extent_interactions = &all->extent_interactions; // TODO: do we care about full ns interaction?
 

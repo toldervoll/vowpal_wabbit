@@ -286,12 +286,12 @@ public:
     float std_label = (label - loss_min) / (loss_max - loss_min);
     float blah = std_label * first_derivative_sub(prediction, 1.f) + (1 - std_label) * first_derivative_sub(prediction, -1.f);
     
-    std::cout << "[first derivative]: " 
-    << "loss_min: " << loss_min << ", "
-    << "loss_max: " << loss_max << ", " 
-    << "std label: " << std_label << ", "
-    << "prediction: " << prediction << ", "
-    << std::endl;
+    // std::cout << "[first derivative]: " 
+    // << "loss_min: " << loss_min << ", "
+    // << "loss_max: " << loss_max << ", " 
+    // << "std label: " << std_label << ", "
+    // << "prediction: " << prediction << ", "
+    // << std::endl;
     return blah;
   }
 
