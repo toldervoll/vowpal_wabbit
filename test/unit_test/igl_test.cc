@@ -1012,12 +1012,12 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
 
   // two vw instance
   auto* sl_vw = VW::initialize(
-    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable" //--cubic caF
+    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable --cubic caF"
   );
-  auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable"); // -q ca
+  auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable -q ca"); // -q ca
 
   // igl instance
-  auto* igl_vw = VW::initialize("--cb_explore_adf --coin --experimental_igl --noconstant --dsjson --readable_model igl.readable -b 19"); // -q ca
+  auto* igl_vw = VW::initialize("--cb_explore_adf --coin --experimental_igl --noconstant --dsjson --readable_model igl.readable -b 19 -q ca"); // -q ca
 
   // train separately
   for (int i = 0; i < ex_num; i++) {
