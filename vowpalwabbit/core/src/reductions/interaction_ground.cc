@@ -83,8 +83,8 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 
   auto ns_iter = feedback_ex->indices.begin();
   auto fh = feedback_ex->feature_space.at(*ns_iter).indices.data();
-  auto fh2 = *fh / 2; //TODO: verify if this is right. 2 is problem multiplier. 
-
+  // auto fh2 = *fh / 2; //TODO: verify if this is right. 2 is problem multiplier. 
+  auto fh2 = *fh;
   // std::string feedback_feature = feedback_ex->feature_space.at(*ns_iter).space_names[0].name;
   std::cout << "[IGL] hash value: " << fh2 << std::endl;
 
@@ -267,11 +267,11 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   ld->ftrl2 = std::make_shared<ftrl>(); //other_ftrl.release()
   copy_ftrl(ld->ftrl_base, ld->ftrl2.get());
 
-  for (auto& interaction : all->interactions) {
-    interaction.push_back(feedback_namespace);
-    ld->psi_interactions.push_back(interaction);
-    interaction.pop_back();
-  }
+  // for (auto& interaction : all->interactions) {
+  //   interaction.push_back(feedback_namespace);
+  //   ld->psi_interactions.push_back(interaction);
+  //   interaction.pop_back();
+  // }
 
   // std::cout << "[IGL] interations:" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
 

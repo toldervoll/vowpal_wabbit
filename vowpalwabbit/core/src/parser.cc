@@ -759,7 +759,9 @@ void setup_example(VW::workspace& all, VW::example* ae)
   if (!all.limit_strings.empty()) { feature_limit(all, ae); }
 
   uint64_t multiplier = static_cast<uint64_t>(all.wpp) << all.weights.stride_shift();
-
+  
+  std::cout << "[parser] features: " << VW::debug::features_to_string(*ae) << std::endl;
+  std::cout << "[parser] multiplier: " << multiplier << std::endl;
   if (multiplier != 1)
   {  // make room for per-feature information.
     for (features& fs : *ae)

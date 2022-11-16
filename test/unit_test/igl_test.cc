@@ -19,8 +19,8 @@ using simulator::cb_sim;
 
 using example_vector = std::vector<std::vector<std::string>>;
 using ftrl_weights_vector = std::vector<std::tuple<float, float, float, float, float, float>>;
-
-int ex_num = 4;
+using separate_weights_vector = std::vector<std::tuple<size_t, float, float, float, float, float, float>>;
+int ex_num = 1;
 example_vector get_multiline_examples(size_t num) {
   example_vector multi_ex_vector = {
     {
@@ -190,6 +190,20 @@ void print_weights(ftrl_weights_vector weights_vector) {
   }
 }
 
+void print_separate_weights(separate_weights_vector weights_vector) {
+  std::cout << std::hexfloat << std::endl;
+  for (auto& weights:weights_vector) {
+    std::cout << std::get<0>(weights) << " "
+      << std::get<1>(weights) << " "
+      << std::get<2>(weights) << " "
+      << std::get<3>(weights) << " "
+      << std::get<4>(weights) << " "
+      << std::get<5>(weights) << " "
+      << std::get<6>(weights) << " "
+    << std::endl;
+  }
+}
+
 ftrl_weights_vector get_weights(VW::workspace* vw) {
   auto& weights = vw->weights.dense_weights;
   auto iter = weights.begin();
@@ -208,6 +222,77 @@ ftrl_weights_vector get_weights(VW::workspace* vw) {
   std::sort(weights_vector.begin(), weights_vector.end());
   VW::finish(*vw);
   return weights_vector;
+}
+
+separate_weights_vector get_separate_weights(VW::workspace* vw) {
+  auto& weights = vw->weights.dense_weights;
+  auto iter = weights.begin();
+  auto end = weights.end();
+
+  separate_weights_vector weights_vector;
+
+  while(iter < end) {
+    bool non_zero = false;
+    for (int i=0; i < 6; i++) {
+      if (*iter[i] != 0.f) {
+        non_zero = true;
+      }
+    }
+
+    if (non_zero) {
+      weights_vector.emplace_back(iter.index_without_stride(), *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+    }
+    ++iter;
+  }
+
+  std::cout << "separate weights: " << std::endl;
+  print_separate_weights(weights_vector);
+
+  // VW::finish(*vw);
+  return weights_vector;
+}
+
+std::vector<separate_weights_vector> split_weights(VW::workspace* vw) {
+  auto& weights = vw->weights.dense_weights;
+  auto iter = weights.begin();
+
+  auto end = weights.end();
+
+  // ftrl_weights_vector weights_vector;
+  separate_weights_vector sl_weights_vector;
+  separate_weights_vector multi_weights_vector;
+  std::vector<separate_weights_vector> result;
+
+  while (iter < end) {
+    bool non_zero = false;
+    for (int i=0; i < 6; i++) {
+      if (*iter[i] != 0.f) {
+        non_zero = true;
+      }
+    }
+    if (non_zero) {
+      if ((iter.index_without_stride() & (2 - 1)) == 0) {
+        // first model
+        sl_weights_vector.emplace_back(iter.index_without_stride()>>1, *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+      } else {
+        // second model
+        multi_weights_vector.emplace_back(iter.index_without_stride()>>1, *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+      }
+    }
+
+    ++iter;
+  }
+
+  std::cout << "single line weights: " << std::endl;
+  print_separate_weights(sl_weights_vector);
+
+  std::cout << "multi line weights: " << std::endl;
+  print_separate_weights(multi_weights_vector);
+
+  result.emplace_back(sl_weights_vector);
+  result.emplace_back(multi_weights_vector);
+  // std::sort(weights_vector.begin(), weights_vector.end());
+  return result;
 }
 
 ftrl_weights_vector train_multiline_igl(example_vector examples) {
@@ -230,6 +315,7 @@ ftrl_weights_vector train_multiline_igl(example_vector examples) {
 ftrl_weights_vector train_sl_igl(example_vector sl_examples) {
   auto* vw = VW::initialize(
     "--link=logistic --loss_function=logistic --coin --noconstant --cubic UAF"
+    // "--link=logistic --loss_function=logistic --coin --noconstant"
   );
 
   for (auto& sl_ex_str : sl_examples) {
@@ -243,8 +329,7 @@ ftrl_weights_vector train_sl_igl(example_vector sl_examples) {
   return get_weights(vw);
 }
 
-ftrl_weights_vector train_dsjson_igl(std::vector<std::string> json_examples) {
-  auto* vw = VW::initialize("--cb_explore_adf --coin --experimental_igl -q UA --noconstant --dsjson");
+ftrl_weights_vector train_dsjson_igl(VW::workspace* vw, std::vector<std::string> json_examples) {
   for (auto& json_text : json_examples) {
     auto examples = parse_dsjson(*vw, json_text);
 
@@ -312,8 +397,9 @@ BOOST_AUTO_TEST_CASE(verify_decoder_model_with_two_text_examples)
 
 BOOST_AUTO_TEST_CASE(verify_deocer_model_with_one_dsjson_example)
 {
+  auto* vw = VW::initialize("--cb_explore_adf --coin --experimental_igl -q UA --noconstant --dsjson");
   std::vector<std::string> dsjson_examples = get_dsjson_examples(1);
-  ftrl_weights_vector dsjson_weights_vector = train_dsjson_igl(dsjson_examples);
+  ftrl_weights_vector dsjson_weights_vector = train_dsjson_igl(vw, dsjson_examples);
   example_vector multi_examples = get_multiline_examples(1);
   ftrl_weights_vector multi_weights_vector = train_multiline_igl(multi_examples);
 
@@ -323,8 +409,9 @@ BOOST_AUTO_TEST_CASE(verify_deocer_model_with_one_dsjson_example)
 
 BOOST_AUTO_TEST_CASE(verify_decoder_model_with_two_dsjson_examples)
 {
+  auto* vw = VW::initialize("--cb_explore_adf --coin --experimental_igl -q UA --noconstant --dsjson");
   std::vector<std::string> dsjson_examples = get_dsjson_examples(2);
-  ftrl_weights_vector dsjson_weights_vector = train_dsjson_igl(dsjson_examples);
+  ftrl_weights_vector dsjson_weights_vector = train_dsjson_igl(vw, dsjson_examples);
   example_vector multi_examples = get_multiline_examples(2);
   ftrl_weights_vector multi_weights_vector = train_multiline_igl(multi_examples);
 
@@ -334,9 +421,9 @@ BOOST_AUTO_TEST_CASE(verify_decoder_model_with_two_dsjson_examples)
 }
 
 BOOST_AUTO_TEST_CASE(test_igl)
-{
+{ // TODO: fix the simulator
   std::vector<std::string> ex_vector = {
-    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id": "0"}, "_multi": [{"a": {"id": "0"}}, {"a": {"id": "4"}}, {"a": {"id": "5"}}, {"a": {"id": "1"}}, {"Feedback": {"none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"Feedback": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
     R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [3, 5, 6, 4, 0], "c": {"c": {"id": "1"}, "_multi": [{"a": {"id": "3"}}, {"a": {"id": "5"}}, {"a": {"id": "6"}}, {"a": {"id": "4"}}, {"a": {"id": "0"}}, {"Feedback": {"none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
     R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [2, 4, 6, 0], "c": {"c": {"id": "1"}, "_multi": [{"a": {"id": "2"}}, {"a": {"id": "4"}}, {"a": {"id": "6"}}, {"a": {"id": "0"}}, {"Feedback": {"none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
     R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [4, 2, 3, 0, 6, 1], "c": {"c": {"id": "0"}, "_multi": [{"a": {"id": "4"}}, {"a": {"id": "2"}}, {"a": {"id": "3"}}, {"a": {"id": "0"}}, {"a": {"id": "6"}}, {"a": {"id": "1"}}, {"Feedback": {"none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
@@ -390,13 +477,15 @@ BOOST_AUTO_TEST_CASE(test_igl)
   };
   // ftrl_weights_vector hacky_dsjson_weights_vector = train_dsjson_igl(ex_vector);
   // print_weights(hacky_dsjson_weights_vector);
-  auto* vw = VW::initialize("--cb_explore_adf --coin --experimental_igl -q ca --noconstant --dsjson --readable_model igl.readable");
+  auto* vw = VW::initialize("--cb_explore_adf --coin --experimental_igl --noconstant --dsjson --readable_model igl.readable -b 20"); // -q ca
   for (int i = 0; i < ex_num; i++) {
     auto& json_text = ex_vector[i];
     auto examples = parse_dsjson(*vw, json_text);
     vw->learn(examples);
     vw->finish_example(examples);
   }
+
+  split_weights(vw);
 
   VW::finish(*vw);
 }
@@ -432,399 +521,399 @@ BOOST_AUTO_TEST_CASE(test_cb_explore_adf) {
 BOOST_AUTO_TEST_CASE(test_two_vw) {
   example_vector sl_vector = {
   {
-    "1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
+    "1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
     },
     {
-    "1 0.6 |v v=none |c id=1 |a id=2",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
+    "1 0.6 |Feedback v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=click |c id=1 |a id=3",
-    "-1 0.6 |v v=click |c id=1 |a id=4",
-    "-1 0.6 |v v=click |c id=1 |a id=0",
-    "-1 0.6 |v v=click |c id=1 |a id=2",
-    "-1 0.6 |v v=click |c id=1 |a id=1",
-    "-1 0.6 |v v=click |c id=1 |a id=5",
-    "1 0.6 |v v=click |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=5",
+    "1 0.6 |Feedback v=click |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "1 0.6 |v v=none |c id=1 |a id=2",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "1 0.6 |Feedback v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=like |c id=0 |a id=3",
-    "1 0.6 |v v=like |c id=0 |a id=1",
-    "-1 0.6 |v v=like |c id=0 |a id=6",
-    "-1 0.6 |v v=like |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=like |c id=0 |a id=3",
+    "1 0.6 |Feedback v=like |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=like |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=like |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=banana |c id=0 |a id=2",
-    "-1 0.6 |v v=banana |c id=0 |a id=6",
-    "-1 0.6 |v v=banana |c id=0 |a id=1",
-    "-1 0.6 |v v=banana |c id=0 |a id=0",
-    "1 0.6 |v v=banana |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=0",
+    "1 0.6 |Feedback v=banana |c id=0 |a id=4",
     },
     {
-    "1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "1 0.6 |v v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "1 0.6 |Feedback v=none |c id=0 |a id=6",
     },
     {
-    "-1 0.6 |v v=like |c id=1 |a id=3",
-    "-1 0.6 |v v=like |c id=1 |a id=1",
-    "-1 0.6 |v v=like |c id=1 |a id=2",
-    "-1 0.6 |v v=like |c id=1 |a id=5",
-    "-1 0.6 |v v=like |c id=1 |a id=4",
-    "1 0.6 |v v=like |c id=1 |a id=6",
-    "-1 0.6 |v v=like |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=4",
+    "1 0.6 |Feedback v=like |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=0",
     },
     {
-    "-1 0.6 |v v=banana |c id=0 |a id=6",
-    "1 0.6 |v v=banana |c id=0 |a id=4",
-    "-1 0.6 |v v=banana |c id=0 |a id=0",
-    "-1 0.6 |v v=banana |c id=0 |a id=5",
-    "-1 0.6 |v v=banana |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=6",
+    "1 0.6 |Feedback v=banana |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "1 0.6 |v v=none |c id=1 |a id=1",
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
-    "-1 0.6 |v v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "1 0.6 |Feedback v=none |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=2",
     },
     {
-    "-1 0.6 |v v=banana |c id=0 |a id=6",
-    "-1 0.6 |v v=banana |c id=0 |a id=0",
-    "-1 0.6 |v v=banana |c id=0 |a id=2",
-    "-1 0.6 |v v=banana |c id=0 |a id=1",
-    "-1 0.6 |v v=banana |c id=0 |a id=3",
-    "1 0.6 |v v=banana |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=3",
+    "1 0.6 |Feedback v=banana |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=banana |c id=1 |a id=1",
-    "-1 0.6 |v v=banana |c id=1 |a id=2",
-    "-1 0.6 |v v=banana |c id=1 |a id=4",
-    "1 0.6 |v v=banana |c id=1 |a id=0",
-    "-1 0.6 |v v=banana |c id=1 |a id=5",
-    "-1 0.6 |v v=banana |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=4",
+    "1 0.6 |Feedback v=banana |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=banana |c id=1 |a id=4",
-    "-1 0.6 |v v=banana |c id=1 |a id=5",
-    "-1 0.6 |v v=banana |c id=1 |a id=6",
-    "-1 0.6 |v v=banana |c id=1 |a id=2",
-    "1 0.6 |v v=banana |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=2",
+    "1 0.6 |Feedback v=banana |c id=1 |a id=0",
     },
     {
-    "-1 0.6 |v v=banana |c id=0 |a id=3",
-    "-1 0.6 |v v=banana |c id=0 |a id=0",
-    "1 0.6 |v v=banana |c id=0 |a id=4",
-    "-1 0.6 |v v=banana |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=0",
+    "1 0.6 |Feedback v=banana |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=1",
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
-    "-1 0.6 |v v=none |c id=1 |a id=3",
-    "1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=2",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=1",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=dislike |c id=1 |a id=1",
-    "-1 0.6 |v v=dislike |c id=1 |a id=4",
-    "1 0.6 |v v=dislike |c id=1 |a id=0",
-    "-1 0.6 |v v=dislike |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=dislike |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=dislike |c id=1 |a id=4",
+    "1 0.6 |Feedback v=dislike |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=dislike |c id=1 |a id=6",
     },
     {
-    "1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=2",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "-1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=click |c id=0 |a id=3",
-    "-1 0.6 |v v=click |c id=0 |a id=2",
-    "-1 0.6 |v v=click |c id=0 |a id=4",
-    "-1 0.6 |v v=click |c id=0 |a id=0",
-    "-1 0.6 |v v=click |c id=0 |a id=6",
-    "-1 0.6 |v v=click |c id=0 |a id=5",
-    "1 0.6 |v v=click |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=click |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=click |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=click |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=click |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=click |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=click |c id=0 |a id=5",
+    "1 0.6 |Feedback v=click |c id=0 |a id=1",
     },
     {
-    "1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=like |c id=1 |a id=2",
-    "-1 0.6 |v v=like |c id=1 |a id=4",
-    "-1 0.6 |v v=like |c id=1 |a id=5",
-    "1 0.6 |v v=like |c id=1 |a id=6",
-    "-1 0.6 |v v=like |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=5",
+    "1 0.6 |Feedback v=like |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=like |c id=1 |a id=0",
     },
     {
-    "-1 0.6 |v v=banana |c id=1 |a id=4",
-    "-1 0.6 |v v=banana |c id=1 |a id=2",
-    "1 0.6 |v v=banana |c id=1 |a id=0",
-    "-1 0.6 |v v=banana |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=2",
+    "1 0.6 |Feedback v=banana |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=1",
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=2",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
     },
     {
-    "1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=1",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=2",
+    "1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=2",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=1",
-    "1 0.6 |v v=none |c id=1 |a id=3",
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=2",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=1",
+    "1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=click |c id=1 |a id=4",
-    "-1 0.6 |v v=click |c id=1 |a id=2",
-    "1 0.6 |v v=click |c id=1 |a id=6",
-    "-1 0.6 |v v=click |c id=1 |a id=1",
-    "-1 0.6 |v v=click |c id=1 |a id=0",
-    "-1 0.6 |v v=click |c id=1 |a id=5",
-    "-1 0.6 |v v=click |c id=1 |a id=3",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=2",
+    "1 0.6 |Feedback v=click |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=click |c id=1 |a id=3",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
     },
     {
-    "-1 0.6 |v v=banana |c id=1 |a id=3",
-    "1 0.6 |v v=banana |c id=1 |a id=0",
-    "-1 0.6 |v v=banana |c id=1 |a id=6",
-    "-1 0.6 |v v=banana |c id=1 |a id=2",
-    "-1 0.6 |v v=banana |c id=1 |a id=1",
-    "-1 0.6 |v v=banana |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=3",
+    "1 0.6 |Feedback v=banana |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=1 |a id=4",
     },
     {
-    "-1 0.6 |v v=banana |c id=0 |a id=0",
-    "-1 0.6 |v v=banana |c id=0 |a id=5",
-    "-1 0.6 |v v=banana |c id=0 |a id=2",
-    "-1 0.6 |v v=banana |c id=0 |a id=1",
-    "1 0.6 |v v=banana |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=1",
+    "1 0.6 |Feedback v=banana |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "-1 0.6 |v v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=6",
     },
     {
-    "-1 0.6 |v v=banana |c id=0 |a id=2",
-    "-1 0.6 |v v=banana |c id=0 |a id=6",
-    "-1 0.6 |v v=banana |c id=0 |a id=3",
-    "-1 0.6 |v v=banana |c id=0 |a id=0",
-    "-1 0.6 |v v=banana |c id=0 |a id=5",
-    "1 0.6 |v v=banana |c id=0 |a id=4",
-    "-1 0.6 |v v=banana |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=5",
+    "1 0.6 |Feedback v=banana |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=none |c id=1 |a id=5",
-    "-1 0.6 |v v=none |c id=1 |a id=4",
-    "-1 0.6 |v v=none |c id=1 |a id=1",
-    "-1 0.6 |v v=none |c id=1 |a id=3",
-    "1 0.6 |v v=none |c id=1 |a id=2",
-    "-1 0.6 |v v=none |c id=1 |a id=0",
-    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=3",
+    "1 0.6 |Feedback v=none |c id=1 |a id=2",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=1 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     },
     {
-    "-1 0.6 |v v=banana |c id=0 |a id=2",
-    "-1 0.6 |v v=banana |c id=0 |a id=1",
-    "-1 0.6 |v v=banana |c id=0 |a id=0",
-    "1 0.6 |v v=banana |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=2",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=banana |c id=0 |a id=0",
+    "1 0.6 |Feedback v=banana |c id=0 |a id=4",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
-    "-1 0.6 |v v=none |c id=0 |a id=0",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "1 0.6 |v v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "1 0.6 |Feedback v=none |c id=0 |a id=6",
     },
     {
-    "-1 0.6 |v v=none |c id=0 |a id=3",
-    "-1 0.6 |v v=none |c id=0 |a id=5",
-    "-1 0.6 |v v=none |c id=0 |a id=2",
-    "1 0.6 |v v=none |c id=0 |a id=6",
-    "-1 0.6 |v v=none |c id=0 |a id=4",
-    "-1 0.6 |v v=none |c id=0 |a id=1",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=3",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=2",
+    "1 0.6 |Feedback v=none |c id=0 |a id=6",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
     }
   };
   std::vector<std::string> multi_vector = {
@@ -882,7 +971,7 @@ BOOST_AUTO_TEST_CASE(test_two_vw) {
   };
 
   auto* sl_vw = VW::initialize(
-    "--link=logistic --loss_function=logistic --coin --noconstant --cubic cav --readable_model psi.readable"
+    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable -b 19" //--cubic caF
   );
   auto* multi_vw = VW::initialize("--cb_explore_adf --coin -q ca --noconstant --dsjson --readable_model pol.readable");
 
@@ -903,4 +992,69 @@ BOOST_AUTO_TEST_CASE(test_two_vw) {
 
   VW::finish(*sl_vw);
   VW::finish(*multi_vw);
+}
+
+BOOST_AUTO_TEST_CASE(test_3_vw) {
+  example_vector sl_vector = {{
+    "1 0.6 |Feedback v=none |c id=0 |a id=0",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
+    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
+  }};
+
+  std::vector<std::string> multi_vector = {
+    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+  };
+
+  std::vector<std::string> igl_dsjson_vector = {
+    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"Feedback": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+  };
+
+  // two vw instance
+  auto* sl_vw = VW::initialize(
+    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable" //--cubic caF
+  );
+  auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable"); // -q ca
+
+  // igl instance
+  auto* igl_vw = VW::initialize("--cb_explore_adf --coin --experimental_igl --noconstant --dsjson --readable_model igl.readable -b 19"); // -q ca
+
+  // train separately
+  for (int i = 0; i < ex_num; i++) {
+    auto sl_examples = sl_vector[i];
+    for (auto& ex_str : sl_examples) {
+      VW::example* ex = VW::read_example(*sl_vw, ex_str);
+      std::cout << "sl vw feature: " << VW::debug::features_to_string(*ex) << std::endl;
+      sl_vw->learn(*ex);
+      sl_vw->finish_example(*ex);
+    }
+
+    auto multi_ex = multi_vector[i];
+    auto examples = parse_dsjson(*multi_vw, multi_ex);
+    multi_vw->learn(examples);
+    multi_vw->finish_example(examples);
+  }
+  separate_weights_vector sl_weights = get_separate_weights(sl_vw);
+  separate_weights_vector multi_weights = get_separate_weights(multi_vw);
+
+  // train IGL
+  for (auto& json_text : igl_dsjson_vector) {
+    auto examples = parse_dsjson(*igl_vw, json_text);
+
+    igl_vw->learn(examples);
+    igl_vw->finish_example(examples);
+  }
+
+  // split weights
+  std::vector<separate_weights_vector> igl_weights = split_weights(igl_vw);
+
+  VW::finish(*sl_vw);
+  VW::finish(*multi_vw);
+  VW::finish(*igl_vw);
+
+  BOOST_CHECK(sl_weights.size() > 0);
+  BOOST_CHECK(sl_weights == igl_weights[0]);
+
+  BOOST_CHECK(multi_weights.size() > 0);
+  BOOST_CHECK(multi_weights == igl_weights[1]);
 }

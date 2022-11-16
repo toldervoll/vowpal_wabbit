@@ -140,6 +140,7 @@ VW::LEARNER::base_learner* VW::reductions::scorer_setup(VW::setup_base_i& stack_
                 .set_output_prediction_type(VW::prediction_type_t::scalar)
                 .set_multipredict(multipredict_f)
                 .set_update(update)
+                // .set_params_per_weight(2) // REMOVEEEEEE
                 .build();
 
   return make_base(*l);

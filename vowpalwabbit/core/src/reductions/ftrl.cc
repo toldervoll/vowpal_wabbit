@@ -247,6 +247,9 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   VW_DBG(ec) << "coin_betting_predict.predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
 
+  std::cout << "[ftrl] coin_betting_predict.predict() " << VW::debug::features_to_string(ec)
+             << std::endl;
+
   VW_DBG(ec)  << "coin_betting_predict.predict() " << b.data.predict << ", "
     << "normalized_sum_norm_x: " << b.normalized_sum_norm_x << ", "
     << "total weight: " <<  b.total_weight << ", "

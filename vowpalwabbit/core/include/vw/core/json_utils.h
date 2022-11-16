@@ -34,6 +34,7 @@ struct Namespace
 
   void AddFeature(feature_value v, feature_index i, const char* feature_name)
   {
+    std::cout << "[json utils] value: " << v << ", index: " << i << ", name: " << feature_name << std::endl; 
     // filter out 0-values
     if (v == 0) { return; }
 
@@ -45,6 +46,7 @@ struct Namespace
 
   void AddFeature(const char* str, hash_func_t hash_func, uint64_t parse_mask)
   {
+    std::cout << "[json addfeature1] str: " << str << ", parse mask: " << parse_mask << std::endl; 
     auto hashed_feature = hash_func(str, strlen(str), namespace_hash) & parse_mask;
     ftrs->push_back(1., hashed_feature);
     feature_count++;
@@ -54,6 +56,8 @@ struct Namespace
 
   void AddFeature(const char* key, const char* value, hash_func_t hash_func, uint64_t parse_mask)
   {
+    std::cout << "[json addfeature2] key: " << key << ", value: " <<value << ", parse mask: " << parse_mask << std::endl; 
+
     ftrs->push_back(1., VW::chain_hash_static(key, value, namespace_hash, hash_func, parse_mask));
     feature_count++;
     if (audit) { ftrs->space_names.emplace_back(name, key, value); }

@@ -377,6 +377,9 @@ void shared_data::print_summary(std::ostream& output, const shared_data& sd, con
   {
     output << sd.holdout_best_loss << " h";
   }
+
+  // output << std::hexfloat;
+
   if (sd.report_multiclass_log_loss)
   {
     if (holdout_set_off)

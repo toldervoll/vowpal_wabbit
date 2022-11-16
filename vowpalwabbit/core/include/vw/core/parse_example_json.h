@@ -1067,7 +1067,11 @@ public:
   BaseState<audit>* Float(Context<audit>& ctx, float f) override
   {
     auto& ns = ctx.CurrentNamespace();
-    auto hash_index = ctx._hash_func(ctx.key, strlen(ctx.key), ns.namespace_hash) & ctx._parse_mask;
+    auto hash_index = ctx._hash_func(ctx.key, strlen(ctx.key), ns.namespace_hash);
+    std::cout << "[parse ex json] hash_index: " << hash_index 
+    << ", key: " << ctx.key << ", parse_mask: " << ctx._parse_mask 
+    << std::endl;
+    hash_index = hash_index & ctx._parse_mask;
     ns.AddFeature(f, hash_index, ctx.key);
     return this;
   }
