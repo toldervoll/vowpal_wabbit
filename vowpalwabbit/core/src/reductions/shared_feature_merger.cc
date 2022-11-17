@@ -31,7 +31,7 @@ struct sfm_data
 
 // TODO: remve this
 bool is_igl(VW::multi_ex& ec_seq) {
-  char feedback_ns = 'F';
+  char feedback_ns = 'v';
   auto ex = ec_seq.back();
   return ex->indices.back() == feedback_ns;
 }

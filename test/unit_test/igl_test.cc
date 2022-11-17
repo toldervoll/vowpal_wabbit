@@ -20,7 +20,7 @@ using simulator::cb_sim;
 using example_vector = std::vector<std::vector<std::string>>;
 using ftrl_weights_vector = std::vector<std::tuple<float, float, float, float, float, float>>;
 using separate_weights_vector = std::vector<std::tuple<size_t, float, float, float, float, float, float>>;
-int ex_num = 1;
+int ex_num = 4;
 example_vector get_multiline_examples(size_t num) {
   example_vector multi_ex_vector = {
     {
@@ -202,6 +202,14 @@ void print_separate_weights(separate_weights_vector weights_vector) {
       << std::get<6>(weights) << " "
     << std::endl;
   }
+}
+
+std::vector<size_t> get_hash(separate_weights_vector weights_vector) {
+  std::vector<size_t> result;
+  for (auto& weights:weights_vector) {
+    result.emplace_back(std::get<0>(weights));
+  }
+  return result;
 }
 
 ftrl_weights_vector get_weights(VW::workspace* vw) {
@@ -995,24 +1003,64 @@ BOOST_AUTO_TEST_CASE(test_two_vw) {
 }
 
 BOOST_AUTO_TEST_CASE(test_3_vw) {
-  example_vector sl_vector = {{
-    "1 0.6 |Feedback v=none |c id=0 |a id=0",
-    "-1 0.6 |Feedback v=none |c id=0 |a id=4",
-    "-1 0.6 |Feedback v=none |c id=0 |a id=5",
-    "-1 0.6 |Feedback v=none |c id=0 |a id=1",
-  }};
+  example_vector sl_vector = {
+    {
+    "1 0.6 |v v=none |c id=0 |a id=0",
+    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "-1 0.6 |v v=none |c id=0 |a id=5",
+    "-1 0.6 |v v=none |c id=0 |a id=1",
+    },
+    {
+    "1 0.6 |v v=none |c id=1 |a id=3",
+    "-1 0.6 |v v=none |c id=1 |a id=5",
+    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |v v=none |c id=1 |a id=4",
+    "-1 0.6 |v v=none |c id=1 |a id=0",
+    },
+    {
+    "1 0.6 |v v=none |c id=1 |a id=2",
+    "-1 0.6 |v v=none |c id=1 |a id=4",
+    "-1 0.6 |v v=none |c id=1 |a id=6",
+    "-1 0.6 |v v=none |c id=1 |a id=0",
+    },
+    {
+    "-1 0.6 |v v=none |c id=0 |a id=4",
+    "-1 0.6 |v v=none |c id=0 |a id=2",
+    "1 0.6 |v v=none |c id=0 |a id=3",
+    "-1 0.6 |v v=none |c id=0 |a id=0",
+    "-1 0.6 |v v=none |c id=0 |a id=6",
+    "-1 0.6 |v v=none |c id=0 |a id=1",
+    },
+    {
+    "-1 0.6 |v v=click |c id=1 |a id=3",
+    "-1 0.6 |v v=click |c id=1 |a id=4",
+    "-1 0.6 |v v=click |c id=1 |a id=0",
+    "-1 0.6 |v v=click |c id=1 |a id=2",
+    "-1 0.6 |v v=click |c id=1 |a id=1",
+    "-1 0.6 |v v=click |c id=1 |a id=5",
+    "1 0.6 |v v=click |c id=1 |a id=6",
+    },
+  };
 
   std::vector<std::string> multi_vector = {
     R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [3, 5, 6, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [2, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [4, 2, 3, 0, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 4, 0, 2, 1, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
   };
 
   std::vector<std::string> igl_dsjson_vector = {
-    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"Feedback": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [3, 5, 6, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [2, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [4, 2, 3, 0, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+    R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 4, 0, 2, 1, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"v": {"v=click": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
   };
 
   // two vw instance
   auto* sl_vw = VW::initialize(
-    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable --cubic caF"
+    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable --cubic cav"
   );
   auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable -q ca"); // -q ca
 
@@ -1038,7 +1086,8 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
   separate_weights_vector multi_weights = get_separate_weights(multi_vw);
 
   // train IGL
-  for (auto& json_text : igl_dsjson_vector) {
+  for (int i = 0; i < ex_num; i++) {
+    auto json_text = igl_dsjson_vector[i];
     auto examples = parse_dsjson(*igl_vw, json_text);
 
     igl_vw->learn(examples);
@@ -1051,6 +1100,14 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
   VW::finish(*sl_vw);
   VW::finish(*multi_vw);
   VW::finish(*igl_vw);
+
+  std::vector<size_t> sl_hash = get_hash(sl_weights);
+  std::vector<size_t> multi_hash = get_hash(multi_weights);
+  std::vector<size_t> igl_sl_hash = get_hash(igl_weights[0]);
+  std::vector<size_t> igl_multi_hash = get_hash(igl_weights[1]);
+
+  BOOST_CHECK(sl_hash == igl_sl_hash);
+  BOOST_CHECK(multi_hash == igl_multi_hash);
 
   BOOST_CHECK(sl_weights.size() > 0);
   BOOST_CHECK(sl_weights == igl_weights[0]);
