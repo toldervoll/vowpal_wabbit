@@ -33,7 +33,13 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
   VW::count_label(*sd, ec.l.simple.label);
   // std::cout << "[count label] single ex learn features: " << VW::debug::features_to_string(ec) << std::endl;
   // std::cout << "[count label]" << ec.l.simple.label << ", " << ec.weight << std::endl;
-  if VW_STD17_CONSTEXPR (is_learn) { base.learn(ec); }
+  if VW_STD17_CONSTEXPR (is_learn) { 
+    // assert(data._all->sd->multiclass_log_loss == 7);
+    std::cout << "[count label]: before learn, loss: " << ec.loss <<std::endl;
+    base.learn(ec); 
+    std::cout << "[count label]: after learn, loss: " << ec.loss <<std::endl;
+
+  }
   else
   {
     base.predict(ec);
@@ -111,6 +117,7 @@ VW::LEARNER::base_learner* VW::reductions::count_label_setup(VW::setup_base_i& s
   }
 
   // std::cout <<"[Count label]" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
+  // assert(data->_all->sd->multiclass_log_loss == 7);
 
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), VW::LEARNER::as_singleline(base),
       count_label_single<true>, count_label_single<false>, stack_builder.get_setupfn_name(count_label_setup))

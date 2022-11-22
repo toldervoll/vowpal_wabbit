@@ -8,6 +8,7 @@
 #include "vw/core/vw_fwd.h"
 
 #include <cfloat>
+#include <iostream>
 
 namespace VW
 {
@@ -31,6 +32,7 @@ inline void count_label(shared_data& sd, float l)
   }
   else
   {
+    std::cout << "[best constant] l: " << l << std::endl;
     sd.first_observed_label = l;
   }
 }

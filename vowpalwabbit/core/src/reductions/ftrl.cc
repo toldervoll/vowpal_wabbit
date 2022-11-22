@@ -192,9 +192,78 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
   }
 }
 
+void print_ftrl(ftrl& b) {
+  std::cout << "[ftrl] ftrl alpha: " << b.ftrl_alpha
+    << "ftrl beta: " << b.ftrl_beta
+    << "no win counter: " << b.no_win_counter
+    << "early stop thres: " << b.early_stop_thres
+    << "ftrl size: " << b.ftrl_size
+    << "total weight: " << b.total_weight
+    << "normalized sum norm x: " << b.normalized_sum_norm_x
+    << std::endl;
+
+  std::cout << "[ftrl] all->sd: queries: " << b.all->sd->queries
+    << "\n  "<< "example_number: " << b.all->sd->example_number
+    << "\n  "<< "total_features: " << b.all->sd->total_features
+    << "\n  "<< "t" << b.all->sd->t
+    << "\n  "<< "weighted_labeled_examples: " << b.all->sd->weighted_labeled_examples
+    << "\n  "<< "old_weighted_labeled_examples: " << b.all->sd->old_weighted_labeled_examples
+    << "\n  "<< "weighted_unlabeled_examples: " << b.all->sd->weighted_unlabeled_examples
+    << "\n  "<< "weighted_labels: " << b.all->sd->weighted_labels
+    << "\n  "<< "sum_loss: " << b.all->sd->sum_loss
+    << "\n  "<< "sum_loss_since_last_dump: " << b.all->sd->sum_loss_since_last_dump
+    << "\n  "<< "dump_interval: " << b.all->sd->dump_interval
+    << "\n  "<< "gravity: " << b.all->sd->gravity
+    << "\n  "<< "contraction: " <<b.all->sd->contraction
+    << "\n  "<< "min_label: " << b.all->sd->min_label
+    << "\n  "<< "max_label: " << b.all->sd->max_label
+    << "\n  "<< "weighted_holdout_examples: " << b.all->sd->weighted_holdout_examples
+    << "\n  "<< "weighted_holdout_examples_since_last_dump: " << b.all->sd->weighted_holdout_examples_since_last_dump
+    << "\n  "<< "holdout_sum_loss_since_last_dump: " << b.all->sd->holdout_sum_loss_since_last_dump
+    << "\n  "<< "holdout_sum_loss: " << b.all->sd->holdout_sum_loss
+    << "\n  "<< "holdout_best_loss: " << b.all->sd->holdout_best_loss
+    << "\n  "<< "weighted_holdout_examples_since_last_pass: " << b.all->sd->weighted_holdout_examples_since_last_pass
+    << "\n  "<< "holdout_sum_loss_since_last_pass: " << b.all->sd->holdout_sum_loss_since_last_pass
+    << "\n  "<< "holdout_best_pass: " << b.all->sd->holdout_best_pass
+    << "\n  "<< "report_multiclass_log_loss: " << b.all->sd->report_multiclass_log_loss
+    << "\n  "<< "multiclass_log_loss: " << b.all->sd->multiclass_log_loss
+    << "\n  "<< "holdout_multiclass_log_loss: " << b.all->sd->holdout_multiclass_log_loss
+    << "\n  "<< "is_more_than_two_labels_observed: " << b.all->sd->is_more_than_two_labels_observed
+    << "\n  "<< "first_observed_label: " << b.all->sd->first_observed_label
+    << "\n  "<< "second_observed_label: " << b.all->sd->second_observed_label
+    << std::endl;
+}
+
+void print_ftrl_update_data(ftrl_update_data& d) {
+  std::cout << "[ftrl update data] d.update: " << d.update 
+    << ", ftrl_alpha: " << d.ftrl_alpha
+    << ", ftrl_beta: " << d.ftrl_beta
+    << ", l1_lambda: " << d.l1_lambda
+    << ", l2 lambda: " << d.l2_lambda
+    << ", predict: " << d.predict
+    << ", normalized squared norm x: " << d.normalized_squared_norm_x
+    << ", average squared norm x: " << d.average_squared_norm_x
+    << std::endl;
+}
+
+void print_w(float* w) {
+  std::cout << "w[0]: " << w[0] << ", "
+    << "w[1]: " << w[1] << ", "
+    << "w[2]: " << w[2] << ", "
+    << "w[3]: " << w[3] << ", "
+    << "w[4]: " << w[4] << ", "
+    << "w[5]: " << w[5] << std::endl; 
+}
+
 void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, float& wref)
 {
+  print_ftrl_update_data(d);
+  std::cout << "[ftrl] x: " << x << std::endl;
+
   float* w = &wref;
+  std::cout << "[ftrl] before: " << std::endl;
+  print_w(w);
+
   float fabs_x = std::fabs(x);
   float gradient = d.update * x;
 
@@ -218,13 +287,9 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_WE] += (-gradient * w[W_XT]);
 
   w[W_XT] /= d.average_squared_norm_x;
-  std::cout << "[ftrl] inner update: " << d.update << ", x: " << x <<std::endl;
-  std::cout << "w[0]: " << w[0] << ", "
-    << "w[1]: " << w[1] << ", "
-    << "w[2]: " << w[2] << ", "
-    << "w[3]: " << w[3] << ", "
-    << "w[4]: " << w[4] << ", "
-    << "w[5]: " << w[5] << std::endl; 
+
+  std::cout << "[ftrl] after: " << std::endl;
+  print_w(w);
 }
 
 void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
@@ -233,9 +298,15 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
+  std::cout << "[ftrl] coin betting predict before: " << std::endl;
+  print_ftrl(b);
+  print_ftrl_update_data(b.data);
   size_t num_features_from_interactions = 0;
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
+  std::cout << "[ftrl] coin betting predict after: " << std::endl;
+  print_ftrl(b);
+  print_ftrl_update_data(b.data);
 
   b.normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
@@ -247,8 +318,8 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   VW_DBG(ec) << "coin_betting_predict.predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
              << std::endl;
 
-  std::cout << "[ftrl] coin_betting_predict.predict() " << VW::debug::features_to_string(ec)
-             << std::endl;
+  // std::cout << "[ftrl] coin_betting_predict.predict() " << VW::debug::features_to_string(ec)
+  //            << std::endl;
 
   VW_DBG(ec)  << "coin_betting_predict.predict() " << b.data.predict << ", "
     << "normalized_sum_norm_x: " << b.normalized_sum_norm_x << ", "
@@ -285,8 +356,15 @@ void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
+  print_ftrl(b);
+  std::cout << "[coin betting] b.data before: " << std::endl; 
+  print_ftrl_update_data(b.data);
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
+  std::cout << "[coin betting] b.data after: " << std::endl;
+  print_ftrl_update_data(b.data);
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
+  std::cout << "[coin betting] b.data after foreach: " << std::endl;
+  print_ftrl_update_data(b.data);
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because
@@ -314,6 +392,7 @@ void NO_SANITIZE_UNDEFINED learn_pistol(ftrl& a, base_learner& base, VW::example
 template <bool audit>
 void NO_SANITIZE_UNDEFINED learn_coin_betting(ftrl& a, base_learner& base, VW::example& ec)
 {
+  // assert(a.all->sd->multiclass_log_loss == 7);
   // update state based on the example and predict
   coin_betting_predict(a, base, ec);
   if (audit) { GD::print_audit_features(*(a.all), ec); }

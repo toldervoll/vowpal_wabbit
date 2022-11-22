@@ -17,6 +17,7 @@
 #include "vw/core/shared_data.h"
 #include "vw/core/vw.h"
 #include "vw/core/loss_functions.h"
+#include "vw/core/simple_label.h"
 #include "details/automl_impl.h"
 
 using namespace VW::LEARNER;
@@ -58,12 +59,16 @@ void empty_example(example& ec)
   ec._reduction_features.clear();
   ec.loss = 0.f;
   ec.num_features_from_interactions = 0;
+  ec.num_features = 0;
 }
 
 void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  std::swap(ig.ftrl_base->all->loss, ig.sl_all->loss);
-  std::swap(ig.ftrl_base->all->sd, ig.sl_all->sd);
+  // std::swap(ig.ftrl_base->all->loss, ig.sl_all->loss);
+  shared_data* original_sd = ig.ftrl_base->all->sd;
+  // std::swap(ig.ftrl_base->all->sd, ig.sl_all->sd);
+  ig.ftrl_base->all->sd = ig.sl_all->sd;
+  ig.ftrl_base->all->loss = get_loss_function(*ig.ftrl_base->all, "logistic", -1.f, 1.f);
 
   float psi_pred = 0.f;
   int chosen_action_idx = 0;
@@ -86,17 +91,17 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   // auto fh2 = *fh / 2; //TODO: verify if this is right. 2 is problem multiplier. 
   auto fh2 = *fh;
   // std::string feedback_feature = feedback_ex->feature_space.at(*ns_iter).space_names[0].name;
-  std::cout << "[IGL] hash value: " << fh2 << std::endl;
+  // std::cout << "[IGL] hash value: " << fh2 << std::endl;
 
-  for (auto& ex_action: ec_seq) {
+  for (auto& ex_action : ec_seq) {
     empty_example(*ig.buffer_sl);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     LabelDict::add_example_namespaces_from_example(*ig.buffer_sl, *ex_action);
     ig.buffer_sl->indices.push_back(feedback_namespace);
     ig.buffer_sl->feature_space[feedback_namespace].push_back(1, fh2); // TODO: remove hardcode fh2
-    ig.buffer_sl->_debug_current_reduction_depth = ex_action->_debug_current_reduction_depth;
-
-    std::cout << "[IGL] psi learn features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
+    // ig.buffer_sl->_debug_current_reduction_depth = ex_action->_debug_current_reduction_depth;
+    ig.buffer_sl->num_features++;
+    // std::cout << "[IGL] psi learn features: " << VW::debug::features_to_string(*ig.buffer_sl) << std::endl;
 
     // 1. learning psi
     float label = -1.f;
@@ -118,11 +123,14 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
     if (!ex_action->l.cb.costs.empty()) {
       psi_pred = ig.buffer_sl->pred.scalar;
     }
+    output_and_account_example(*ig.ftrl_base->all, *ig.buffer_sl);
   }
-
-  std::swap(ig.ftrl_base->all->loss, ig.sl_all->loss);
-  std::swap(ig.ftrl_base->all->sd, ig.sl_all->sd);
-
+  
+  // std::swap(ig.ftrl_base->all->loss, ig.sl_all->loss);
+  // std::swap(ig.ftrl_base->all->sd, ig.sl_all->sd);
+  ig.ftrl_base->all->sd = original_sd;
+  ig.ftrl_base->all->loss = get_loss_function(*ig.ftrl_base->all, "squared", -1.f, 1.f); //VW::make_unique<squaredloss>();
+  
   float fake_cost = 0.f;
   // 4. update multi line ex label
   if (psi_pred * 2 > 1) {
@@ -139,17 +147,19 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   //           << "fake cost: " << fake_cost
   //           << std::endl;
 
-  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
-  base.learn(ec_seq, 1);
-  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  // base.learn(ec_seq, 1);
+  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
   ec_seq.push_back(feedback_ex);
 }
 
 void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
-  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  // Is loss func used in predict?
+  // matches what we do for learn
+  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
   base.predict(ec_seq, 1);
-  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
 }
 } // namespace
 
@@ -194,6 +204,12 @@ void VW::reductions::swap_ftrl(ftrl* source, ftrl* destination) { // convert thi
   std::swap(destination->normalized_sum_norm_x , source->normalized_sum_norm_x);
 }
 
+void finish_igl_examples(VW::workspace& all, interaction_ground& ig, VW::multi_ex& ec_seq)
+{
+  // VW::LEARNER::as_singleline(data._base)->finish_example(all, ec);
+  // output_and_account_example(all, ec);
+}
+
 base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_builder)
 {
   // rename this var to options_first_stack
@@ -233,7 +249,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
       enabled_reductions.begin(),
       enabled_reductions.end() - 1,
       std::ostream_iterator<std::string>(imploded, delim));
-  std::cerr << "(inside IGL): " << imploded.str() << enabled_reductions.back() << std::endl;
+  std::cerr << "[IGL]: " << imploded.str() << enabled_reductions.back() << std::endl;
 
   auto* ftrl_coin = pi->get_learner_by_name_prefix("ftrl-Coin");
 
@@ -267,11 +283,11 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   ld->ftrl2 = std::make_shared<ftrl>(); //other_ftrl.release()
   copy_ftrl(ld->ftrl_base, ld->ftrl2.get());
 
-  for (auto& interaction : all->interactions) {
-    interaction.push_back(feedback_namespace);
-    ld->psi_interactions.push_back(interaction);
-    interaction.pop_back();
-  }
+  // for (auto& interaction : all->interactions) {
+  //   interaction.push_back(feedback_namespace);
+  //   ld->psi_interactions.push_back(interaction);
+  //   interaction.pop_back();
+  // }
 
   // std::cout << "[IGL] interations:" << VW::reductions::util::interaction_vec_t_to_string(all->interactions, "quadratic") <<std::endl;
 
@@ -308,6 +324,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
                 .set_output_label_type(label_type_t::cb)
                 .set_output_prediction_type(prediction_type_t::action_scores)
                 .set_input_prediction_type(prediction_type_t::action_scores)
+                // .set_finish_example(finish_igl_examples)
                 .build();
   // TODO: assert ftrl is the base, fail otherwise
   // VW::reductions::util::fail_if_enabled

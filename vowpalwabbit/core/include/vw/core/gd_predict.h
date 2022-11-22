@@ -7,6 +7,7 @@
 #include "vw/core/debug_log.h"
 #include "vw/core/example_predict.h"
 #include "vw/core/v_array.h"
+#include <iostream>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd_predict
@@ -27,6 +28,14 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
   for (const auto& f : fs)
   {
     weight& w = weights[(f.index() + offset)];
+    float* w2 = &weights[(f.index() + offset)];
+    std::cout << "\t [gd pred] WEIGHTS: "; 
+    for (size_t i = 0; i < 5; i++) {
+      std::cout << w2[i] << ",";
+    }
+   std::cout << std::endl;
+  
+    std::cout << "[gd pred] w: " << w << ", f.indexUNORDER: " << f.index() << ", offset: " << offset << ", mult: " << mult << ", f.value(): " << f.value() << std::endl;
     FuncT(dat, mult * f.value(), w);
   }
 }
@@ -80,6 +89,7 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
   }
   else
   {
+    // std::cout << "[gd predict] ec: " << VW::debug::features_to_string(ec) << std::endl;
     for (features& f : ec) { foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset); }
   }
 

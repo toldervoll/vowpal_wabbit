@@ -34,7 +34,7 @@ struct Namespace
 
   void AddFeature(feature_value v, feature_index i, const char* feature_name)
   {
-    std::cout << "[json utils] value: " << v << ", index: " << i << ", name: " << feature_name << std::endl; 
+    // std::cout << "[json utils] value: " << v << ", index: " << i << ", name: " << feature_name << std::endl; 
     // filter out 0-values
     if (v == 0) { return; }
 
