@@ -78,9 +78,9 @@ void predict_or_learn(scorer& s, VW::LEARNER::single_learner& base, VW::example&
     // std::cout << "[scorer]: ec.pred.scalar" << ec.pred.scalar
     //   << "ec.l.simple.label: " << ec.l.simple.label
     //   << "ec.weight: " << ec.weight << std::endl;
-    print_sd(s.all->sd);
+    // print_sd(s.all->sd);
     ec.loss = s.all->loss->get_loss(s.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight; 
-    std::cout << "[scorer loss]: " << ec.loss << std::endl;
+    // std::cout << "[scorer loss]: " << ec.loss << std::endl;
   }
 
   ec.pred.scalar = link(ec.pred.scalar);

@@ -20,61 +20,512 @@ using simulator::cb_sim;
 using example_vector = std::vector<std::vector<std::string>>;
 using ftrl_weights_vector = std::vector<std::tuple<float, float, float, float, float, float>>;
 using separate_weights_vector = std::vector<std::tuple<size_t, float, float, float, float, float, float>>;
-int ex_num = 1;
+int ex_num = 51;
 
 example_vector sl_vector = {
-  {
-  "1 0.6 |v v=none |c id=0 |a id=0",
-  "-1 0.6 |v v=none |c id=0 |a id=4",
-  "-1 0.6 |v v=none |c id=0 |a id=5",
-  "-1 0.6 |v v=none |c id=0 |a id=1",
-  },
-  {
-  "1 0.6 |v v=none |c id=1 |a id=3",
-  "-1 0.6 |v v=none |c id=1 |a id=5",
-  "-1 0.6 |v v=none |c id=1 |a id=6",
-  "-1 0.6 |v v=none |c id=1 |a id=4",
-  "-1 0.6 |v v=none |c id=1 |a id=0",
-  },
-  {
-  "1 0.6 |v v=none |c id=1 |a id=2",
-  "-1 0.6 |v v=none |c id=1 |a id=4",
-  "-1 0.6 |v v=none |c id=1 |a id=6",
-  "-1 0.6 |v v=none |c id=1 |a id=0",
-  },
-  {
-  "-1 0.6 |v v=none |c id=0 |a id=4",
-  "-1 0.6 |v v=none |c id=0 |a id=2",
-  "1 0.6 |v v=none |c id=0 |a id=3",
-  "-1 0.6 |v v=none |c id=0 |a id=0",
-  "-1 0.6 |v v=none |c id=0 |a id=6",
-  "-1 0.6 |v v=none |c id=0 |a id=1",
-  },
-  {
-  "-1 0.6 |v v=click |c id=1 |a id=3",
-  "-1 0.6 |v v=click |c id=1 |a id=4",
-  "-1 0.6 |v v=click |c id=1 |a id=0",
-  "-1 0.6 |v v=click |c id=1 |a id=2",
-  "-1 0.6 |v v=click |c id=1 |a id=1",
-  "-1 0.6 |v v=click |c id=1 |a id=5",
-  "1 0.6 |v v=click |c id=1 |a id=6",
-  },
+{
+"1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+},
+{
+"1 0.6 |c id=1 |a id=2 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=3 |v v=click",
+"-1 0.6 |c id=1 |a id=4 |v v=click",
+"-1 0.6 |c id=1 |a id=0 |v v=click",
+"-1 0.6 |c id=1 |a id=2 |v v=click",
+"-1 0.6 |c id=1 |a id=1 |v v=click",
+"-1 0.6 |c id=1 |a id=5 |v v=click",
+"1 0.6 |c id=1 |a id=6 |v v=click",
+},
+{
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"1 0.6 |c id=1 |a id=2 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=3 |v v=like",
+"1 0.6 |c id=0 |a id=1 |v v=like",
+"-1 0.6 |c id=0 |a id=6 |v v=like",
+"-1 0.6 |c id=0 |a id=4 |v v=like",
+},
+{
+"-1 0.6 |c id=0 |a id=2 |v v=banana",
+"-1 0.6 |c id=0 |a id=6 |v v=banana",
+"-1 0.6 |c id=0 |a id=1 |v v=banana",
+"-1 0.6 |c id=0 |a id=0 |v v=banana",
+"1 0.6 |c id=0 |a id=4 |v v=banana",
+},
+{
+"1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"1 0.6 |c id=0 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=3 |v v=like",
+"-1 0.6 |c id=1 |a id=1 |v v=like",
+"-1 0.6 |c id=1 |a id=2 |v v=like",
+"-1 0.6 |c id=1 |a id=5 |v v=like",
+"-1 0.6 |c id=1 |a id=4 |v v=like",
+"1 0.6 |c id=1 |a id=6 |v v=like",
+"-1 0.6 |c id=1 |a id=0 |v v=like",
+},
+{
+"-1 0.6 |c id=0 |a id=6 |v v=banana",
+"1 0.6 |c id=0 |a id=4 |v v=banana",
+"-1 0.6 |c id=0 |a id=0 |v v=banana",
+"-1 0.6 |c id=0 |a id=5 |v v=banana",
+"-1 0.6 |c id=0 |a id=1 |v v=banana",
+},
+{
+"-1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"1 0.6 |c id=1 |a id=1 |v v=none",
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+"-1 0.6 |c id=1 |a id=2 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=6 |v v=banana",
+"-1 0.6 |c id=0 |a id=0 |v v=banana",
+"-1 0.6 |c id=0 |a id=2 |v v=banana",
+"-1 0.6 |c id=0 |a id=1 |v v=banana",
+"-1 0.6 |c id=0 |a id=3 |v v=banana",
+"1 0.6 |c id=0 |a id=4 |v v=banana",
+},
+{
+"-1 0.6 |c id=1 |a id=1 |v v=banana",
+"-1 0.6 |c id=1 |a id=2 |v v=banana",
+"-1 0.6 |c id=1 |a id=4 |v v=banana",
+"1 0.6 |c id=1 |a id=0 |v v=banana",
+"-1 0.6 |c id=1 |a id=5 |v v=banana",
+"-1 0.6 |c id=1 |a id=6 |v v=banana",
+},
+{
+"-1 0.6 |c id=1 |a id=4 |v v=banana",
+"-1 0.6 |c id=1 |a id=5 |v v=banana",
+"-1 0.6 |c id=1 |a id=6 |v v=banana",
+"-1 0.6 |c id=1 |a id=2 |v v=banana",
+"1 0.6 |c id=1 |a id=0 |v v=banana",
+},
+{
+"-1 0.6 |c id=0 |a id=3 |v v=banana",
+"-1 0.6 |c id=0 |a id=0 |v v=banana",
+"1 0.6 |c id=0 |a id=4 |v v=banana",
+"-1 0.6 |c id=0 |a id=1 |v v=banana",
+},
+{
+"-1 0.6 |c id=1 |a id=1 |v v=none",
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+"-1 0.6 |c id=1 |a id=3 |v v=none",
+"1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=2 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=1 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=1 |v v=dislike",
+"-1 0.6 |c id=1 |a id=4 |v v=dislike",
+"1 0.6 |c id=1 |a id=0 |v v=dislike",
+"-1 0.6 |c id=1 |a id=6 |v v=dislike",
+},
+{
+"1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=2 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"-1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=3 |v v=click",
+"-1 0.6 |c id=0 |a id=2 |v v=click",
+"-1 0.6 |c id=0 |a id=4 |v v=click",
+"-1 0.6 |c id=0 |a id=0 |v v=click",
+"-1 0.6 |c id=0 |a id=6 |v v=click",
+"-1 0.6 |c id=0 |a id=5 |v v=click",
+"1 0.6 |c id=0 |a id=1 |v v=click",
+},
+{
+"1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=2 |v v=like",
+"-1 0.6 |c id=1 |a id=4 |v v=like",
+"-1 0.6 |c id=1 |a id=5 |v v=like",
+"1 0.6 |c id=1 |a id=6 |v v=like",
+"-1 0.6 |c id=1 |a id=0 |v v=like",
+},
+{
+"-1 0.6 |c id=1 |a id=4 |v v=banana",
+"-1 0.6 |c id=1 |a id=2 |v v=banana",
+"1 0.6 |c id=1 |a id=0 |v v=banana",
+"-1 0.6 |c id=1 |a id=6 |v v=banana",
+},
+{
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=1 |v v=none",
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=2 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+},
+{
+"1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=1 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=2 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=1 |v v=none",
+"1 0.6 |c id=1 |a id=3 |v v=none",
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=2 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=4 |v v=click",
+"-1 0.6 |c id=1 |a id=2 |v v=click",
+"1 0.6 |c id=1 |a id=6 |v v=click",
+"-1 0.6 |c id=1 |a id=1 |v v=click",
+"-1 0.6 |c id=1 |a id=0 |v v=click",
+"-1 0.6 |c id=1 |a id=5 |v v=click",
+"-1 0.6 |c id=1 |a id=3 |v v=click",
+},
+{
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+},
+{
+"-1 0.6 |c id=1 |a id=3 |v v=banana",
+"1 0.6 |c id=1 |a id=0 |v v=banana",
+"-1 0.6 |c id=1 |a id=6 |v v=banana",
+"-1 0.6 |c id=1 |a id=2 |v v=banana",
+"-1 0.6 |c id=1 |a id=1 |v v=banana",
+"-1 0.6 |c id=1 |a id=4 |v v=banana",
+},
+{
+"-1 0.6 |c id=0 |a id=0 |v v=banana",
+"-1 0.6 |c id=0 |a id=5 |v v=banana",
+"-1 0.6 |c id=0 |a id=2 |v v=banana",
+"-1 0.6 |c id=0 |a id=1 |v v=banana",
+"1 0.6 |c id=0 |a id=4 |v v=banana",
+},
+{
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=2 |v v=banana",
+"-1 0.6 |c id=0 |a id=6 |v v=banana",
+"-1 0.6 |c id=0 |a id=3 |v v=banana",
+"-1 0.6 |c id=0 |a id=0 |v v=banana",
+"-1 0.6 |c id=0 |a id=5 |v v=banana",
+"1 0.6 |c id=0 |a id=4 |v v=banana",
+"-1 0.6 |c id=0 |a id=1 |v v=banana",
+},
+{
+"-1 0.6 |c id=1 |a id=5 |v v=none",
+"-1 0.6 |c id=1 |a id=4 |v v=none",
+"-1 0.6 |c id=1 |a id=1 |v v=none",
+"-1 0.6 |c id=1 |a id=3 |v v=none",
+"1 0.6 |c id=1 |a id=2 |v v=none",
+"-1 0.6 |c id=1 |a id=0 |v v=none",
+"-1 0.6 |c id=1 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=2 |v v=banana",
+"-1 0.6 |c id=0 |a id=1 |v v=banana",
+"-1 0.6 |c id=0 |a id=0 |v v=banana",
+"1 0.6 |c id=0 |a id=4 |v v=banana",
+},
+{
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+"-1 0.6 |c id=0 |a id=0 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"1 0.6 |c id=0 |a id=6 |v v=none",
+},
+{
+"-1 0.6 |c id=0 |a id=3 |v v=none",
+"-1 0.6 |c id=0 |a id=5 |v v=none",
+"-1 0.6 |c id=0 |a id=2 |v v=none",
+"1 0.6 |c id=0 |a id=6 |v v=none",
+"-1 0.6 |c id=0 |a id=4 |v v=none",
+"-1 0.6 |c id=0 |a id=1 |v v=none",
+},
 };
 
 std::vector<std::string> multi_vector = {
-  R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [3, 5, 6, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [2, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [4, 2, 3, 0, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 4, 0, 2, 1, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [3, 5, 6, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [2, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [4, 2, 3, 0, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 4, 0, 2, 1, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [0, 2, 4, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [6, 5, 0, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [6, 4, 0, 3, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "like"}}], "a": [3, 1, 6, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "banana"}}], "a": [2, 6, 1, 0, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 2, 1, 3, 0, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [3, 2, 4, 1, 6], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 6, "_labelIndex": 5, "o": [{"v": {"v": "like"}}], "a": [3, 1, 2, 5, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "banana"}}], "a": [6, 4, 0, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [3, 4, 0, 1, 5, 6, 2], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 6, "_labelIndex": 5, "o": [{"v": {"v": "banana"}}], "a": [6, 0, 2, 1, 3, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "banana"}}], "a": [1, 2, 4, 0, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "banana"}}], "a": [4, 5, 6, 2, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "banana"}}], "a": [3, 0, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [1, 5, 6, 3, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [5, 2, 0, 3, 4, 1, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "dislike"}}], "a": [1, 4, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 4, 2, 0, 3, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=6": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 2, 4, 0, 6, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 3, 6, 2, 0, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [6, 5, 0, 2, 3, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "like"}}], "a": [2, 4, 5, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "banana"}}], "a": [4, 2, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [2, 4, 3, 0, 5, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 3, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=6": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [6, 2, 3, 4, 0, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [0, 4, 3, 1, 5, 2, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [5, 0, 6, 2, 3, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [3, 5, 2, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [5, 4, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [6, 0, 2, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 3, 1, 6, 0, 4, 2], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [1, 3, 5, 0, 4, 2, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "click"}}], "a": [4, 2, 6, 1, 0, 5, 3], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=3": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [1, 5, 4, 6, 0, 3, 2], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "banana"}}], "a": [3, 0, 6, 2, 1, 4], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "banana"}}], "a": [0, 5, 2, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [0, 1, 6, 5, 2, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [3, 4, 6, 1, 2, 0], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [0, 1, 4, 2, 5, 6], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 1.0, "_label_probability": 0.14285714285714285, "_label_Action": 6, "_labelIndex": 5, "o": [{"v": {"v": "banana"}}], "a": [2, 6, 3, 0, 5, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 1.0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [5, 4, 1, 3, 2, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [4, 3, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 1.0, "_label_probability": 0.25, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "banana"}}], "a": [2, 1, 0, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 1.0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "none"}}], "a": [4, 1, 0, 5, 3, 2, 6], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [3, 5, 2, 6, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
 };
 
 std::vector<std::string> igl_dsjson_vector = {
-  R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [3, 5, 6, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [2, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [4, 2, 3, 0, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
-  R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 4, 0, 2, 1, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"v": {"v=click": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [3, 5, 6, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [2, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [4, 2, 3, 0, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 4, 0, 2, 1, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"v": {"v=click": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [0, 2, 4, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [6, 5, 0, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [6, 4, 0, 3, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "like"}}], "a": [3, 1, 6, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"v": {"v=like": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "banana"}}], "a": [2, 6, 1, 0, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 2, 1, 3, 0, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [3, 2, 4, 1, 6], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 6, "_labelIndex": 5, "o": [{"v": {"v": "like"}}], "a": [3, 1, 2, 5, 4, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"v": {"v=like": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "banana"}}], "a": [6, 4, 0, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [3, 4, 0, 1, 5, 6, 2], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 6, "_labelIndex": 5, "o": [{"v": {"v": "banana"}}], "a": [6, 0, 2, 1, 3, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "banana"}}], "a": [1, 2, 4, 0, 5, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "banana"}}], "a": [4, 5, 6, 2, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "banana"}}], "a": [3, 0, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [1, 5, 6, 3, 4, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [5, 2, 0, 3, 4, 1, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "dislike"}}], "a": [1, 4, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"v": {"v=dislike": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 4, 2, 0, 3, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "click"}}], "a": [3, 2, 4, 0, 6, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"v": {"v=click": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 3, 6, 2, 0, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [6, 5, 0, 2, 3, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "like"}}], "a": [2, 4, 5, 6, 0], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"v": {"v=like": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "banana"}}], "a": [4, 2, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [2, 4, 3, 0, 5, 6, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [0, 4, 5, 3, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [6, 2, 3, 4, 0, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [0, 4, 3, 1, 5, 2, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [5, 0, 6, 2, 3, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [3, 5, 2, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [5, 4, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [6, 0, 2, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"v": {"v=none": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 1, "_labelIndex": 0, "o": [{"v": {"v": "none"}}], "a": [5, 3, 1, 6, 0, 4, 2], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [1, 3, 5, 0, 4, 2, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "click"}}], "a": [4, 2, 6, 1, 0, 5, 3], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"v": {"v=click": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [1, 5, 4, 6, 0, 3, 2], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=1": 1}}, {"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=0": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "banana"}}], "a": [3, 0, 6, 2, 1, 4], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.2, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "banana"}}], "a": [0, 5, 2, 1, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.2, 0.2, 0.2, 0.2, 0.2], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [0, 1, 6, 5, 2, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=6": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=4": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 3, "_labelIndex": 2, "o": [{"v": {"v": "none"}}], "a": [3, 4, 6, 1, 2, 0], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=4": 1}}, {"a": {"id=6": 1}}, {"a": {"id=1": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [0, 1, 4, 2, 5, 6], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=0": 1}}, {"a": {"id=1": 1}}, {"a": {"id=4": 1}}, {"a": {"id=2": 1}}, {"a": {"id=5": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
+R"({"_label_cost": 1.0, "_label_probability": 0.14285714285714285, "_label_Action": 6, "_labelIndex": 5, "o": [{"v": {"v": "banana"}}], "a": [2, 6, 3, 0, 5, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=3": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 1.0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 5, "_labelIndex": 4, "o": [{"v": {"v": "none"}}], "a": [5, 4, 1, 3, 2, 0, 6], "c": {"c": {"id=1": 1}, "_multi": [{"a": {"id=5": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=0": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.25, "_label_Action": 2, "_labelIndex": 1, "o": [{"v": {"v": "none"}}], "a": [4, 3, 5, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 0})",
+R"({"_label_cost": 1.0, "_label_probability": 0.25, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "banana"}}], "a": [2, 1, 0, 4], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=2": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=4": 1}}, {"v": {"v=banana": 1}}]}, "p": [0.25, 0.25, 0.25, 0.25], "_original_label_cost": 1.0})",
+R"({"_label_cost": 0, "_label_probability": 0.14285714285714285, "_label_Action": 7, "_labelIndex": 6, "o": [{"v": {"v": "none"}}], "a": [4, 1, 0, 5, 3, 2, 6], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"a": {"id=0": 1}}, {"a": {"id=5": 1}}, {"a": {"id=3": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"v": {"v=none": 1}}]}, "p": [0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285, 0.14285714285714285], "_original_label_cost": 0})",
+R"({"_label_cost": 0, "_label_probability": 0.16666666666666666, "_label_Action": 4, "_labelIndex": 3, "o": [{"v": {"v": "none"}}], "a": [3, 5, 2, 6, 4, 1], "c": {"c": {"id=0": 1}, "_multi": [{"a": {"id=3": 1}}, {"a": {"id=5": 1}}, {"a": {"id=2": 1}}, {"a": {"id=6": 1}}, {"a": {"id=4": 1}}, {"a": {"id=1": 1}}, {"v": {"v=none": 1}}]}, "p": [0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666, 0.16666666666666666], "_original_label_cost": 0})",
 };
 
 example_vector get_multiline_examples(size_t num) {
@@ -488,6 +939,10 @@ BOOST_AUTO_TEST_CASE(test_igl)
 {
   auto* vw = VW::initialize("--cb_explore_adf --coin --experimental_igl --noconstant --dsjson --readable_model igl.readable -b 19"); // -q ca
   for (int i = 0; i < ex_num; i++) {
+    if (i == 4) {
+      std::cout << "====5th ex====" << std::endl;
+    }
+
     auto& json_text = igl_dsjson_vector[i];
     auto examples = parse_dsjson(*vw, json_text);
     vw->learn(examples);
@@ -534,6 +989,10 @@ BOOST_AUTO_TEST_CASE(test_two_vw) {
   auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable"); // -q ca
 
   for (int i = 0; i < ex_num; i++) {
+    if (i == 4) {
+      std::cout << "====5th ex====" << std::endl;
+    }
+
     for (auto& ex_str : sl_vector[i]) {
       VW::example* ex = VW::read_example(*sl_vw, ex_str);
       // std::cout << "sl vw feature: " << VW::debug::features_to_string(*ex) << std::endl;
@@ -556,12 +1015,12 @@ BOOST_AUTO_TEST_CASE(test_two_vw) {
 BOOST_AUTO_TEST_CASE(test_3_vw) {
   // two vw instance
   auto* sl_vw = VW::initialize(
-    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable"  //--cubic cav
+    "--link=logistic --loss_function=logistic --coin --noconstant --readable_model psi.readable --cubic cav"  //--cubic cav
   );
-  auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable"); // -q ca
+  auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable -q ca"); // -q ca
 
   // igl instance
-  auto* igl_vw = VW::initialize("--cb_explore_adf --coin --experimental_igl --noconstant --dsjson --readable_model igl.readable -b 19"); // -q ca
+  auto* igl_vw = VW::initialize("--cb_explore_adf --coin --experimental_igl --noconstant --dsjson --readable_model igl.readable -b 19 -q ca"); // -q ca
 
   // train separately
   for (int i = 0; i < ex_num; i++) {
@@ -573,13 +1032,11 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
       sl_vw->finish_example(*ex);
     }
 
-    auto multi_ex = multi_vector[i];
-    auto examples = parse_dsjson(*multi_vw, multi_ex);
-    multi_vw->learn(examples);
-    multi_vw->finish_example(examples);
+    // auto multi_ex = multi_vector[i];
+    // auto examples = parse_dsjson(*multi_vw, multi_ex);
+    // multi_vw->learn(examples);
+    // multi_vw->finish_example(examples);
   }
-  separate_weights_vector sl_weights = get_separate_weights(sl_vw);
-  separate_weights_vector multi_weights = get_separate_weights(multi_vw);
 
   // train IGL
   for (int i = 0; i < ex_num; i++) {
@@ -590,7 +1047,11 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
     igl_vw->finish_example(examples);
   }
 
-  // split weights
+  // separate weights
+  separate_weights_vector sl_weights = get_separate_weights(sl_vw);
+  // separate_weights_vector multi_weights = get_separate_weights(multi_vw);
+
+  // split IGL weights
   std::vector<separate_weights_vector> igl_weights = split_weights(igl_vw);
 
   VW::finish(*sl_vw);
@@ -598,9 +1059,9 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
   VW::finish(*igl_vw);
 
   std::vector<size_t> sl_hash = get_hash(sl_weights);
-  std::vector<size_t> multi_hash = get_hash(multi_weights);
+  // std::vector<size_t> multi_hash = get_hash(multi_weights);
   std::vector<size_t> igl_sl_hash = get_hash(igl_weights[0]);
-  std::vector<size_t> igl_multi_hash = get_hash(igl_weights[1]);
+  // std::vector<size_t> igl_multi_hash = get_hash(igl_weights[1]);
 
   BOOST_CHECK(sl_hash == igl_sl_hash);
   // BOOST_CHECK(multi_hash == igl_multi_hash);

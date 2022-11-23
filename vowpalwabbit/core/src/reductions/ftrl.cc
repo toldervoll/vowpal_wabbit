@@ -184,6 +184,7 @@ void inner_coin_betting_predict(ftrl_update_data& d, float x, float& wref)
   if (w[W_MG] * w_mx > 0)
   { w_xt = ((d.ftrl_alpha + w[W_WE]) / (w[W_MG] * w_mx * (w[W_MG] * w_mx + w[W_G2]))) * w[W_ZT]; }
 
+  std::cout << std::hexfloat << "==predict: " << d.predict << "==xt: " << w_xt << ", x: " << x <<std::endl;
   d.predict += w_xt * x;
   if (w_mx > 0)
   {
@@ -233,6 +234,47 @@ void print_ftrl(ftrl& b) {
     << "\n  "<< "second_observed_label: " << b.all->sd->second_observed_label
     << std::endl;
 }
+using separate_weights_vector = std::vector<std::tuple<size_t, float, float, float, float, float, float>>;
+
+void print_separate_weights(separate_weights_vector weights_vector) {
+  std::cout << "[ftrl] weights: " << std::endl;
+  std::cout << std::hexfloat;
+  for (auto& weights:weights_vector) {
+    std::cout << std::get<0>(weights) << " "
+      << std::get<1>(weights) << " "
+      << std::get<2>(weights) << " "
+      << std::get<3>(weights) << " "
+      << std::get<4>(weights) << " "
+      << std::get<5>(weights) << " "
+      << std::get<6>(weights) << " "
+    << std::endl;
+  }
+}
+
+separate_weights_vector get_separate_weights(VW::workspace* vw) {
+  auto& weights = vw->weights.dense_weights;
+  auto iter = weights.begin();
+  auto end = weights.end();
+
+  separate_weights_vector weights_vector;
+
+  while(iter < end) {
+    bool non_zero = false;
+    for (int i=0; i < 6; i++) {
+      if (*iter[i] != 0.f) {
+        non_zero = true;
+      }
+    }
+
+    if (non_zero) {
+      weights_vector.emplace_back(iter.index_without_stride(), *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+    }
+    ++iter;
+  }
+
+  return weights_vector;
+}
+
 
 void print_ftrl_update_data(ftrl_update_data& d) {
   std::cout << "[ftrl update data] d.update: " << d.update 
@@ -257,12 +299,12 @@ void print_w(float* w) {
 
 void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, float& wref)
 {
-  print_ftrl_update_data(d);
-  std::cout << "[ftrl] x: " << x << std::endl;
+  // print_ftrl_update_data(d);
+  // std::cout << "[ftrl] x: " << x << std::endl;
 
   float* w = &wref;
-  std::cout << "[ftrl] before: " << std::endl;
-  print_w(w);
+  // std::cout << "[ftrl] before: " << std::endl;
+  // print_w(w);
 
   float fabs_x = std::fabs(x);
   float gradient = d.update * x;
@@ -286,6 +328,9 @@ void inner_coin_betting_update_after_prediction(ftrl_update_data& d, float x, fl
   w[W_G2] += std::fabs(gradient);
   w[W_WE] += (-gradient * w[W_XT]);
 
+
+  std::cout << std::hexfloat << "\t [ftrl] w[4]: " << w[W_WE] << ", update: " << d.update << ", x: " << x << ", gradient: " << gradient << std::endl;
+
   w[W_XT] /= d.average_squared_norm_x;
 
   std::cout << "[ftrl] after: " << std::endl;
@@ -298,21 +343,24 @@ void coin_betting_predict(ftrl& b, base_learner&, VW::example& ec)
   b.data.predict = 0;
   b.data.normalized_squared_norm_x = 0;
 
-  std::cout << "[ftrl] coin betting predict before: " << std::endl;
-  print_ftrl(b);
-  print_ftrl_update_data(b.data);
+  // std::cout << "[ftrl] coin betting predict before: " << std::endl;
+  // print_ftrl(b);
+  // print_ftrl_update_data(b.data);
   size_t num_features_from_interactions = 0;
+  separate_weights_vector sw =  get_separate_weights(b.all);
+  print_separate_weights(sw);
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_predict>(*b.all, ec, b.data, num_features_from_interactions);
   ec.num_features_from_interactions = num_features_from_interactions;
-  std::cout << "[ftrl] coin betting predict after: " << std::endl;
-  print_ftrl(b);
-  print_ftrl_update_data(b.data);
+  // std::cout << "[ftrl] coin betting predict after: " << std::endl;
+  // print_ftrl(b);
+  // print_ftrl_update_data(b.data);
 
   b.normalized_sum_norm_x += (static_cast<double>(ec.weight)) * b.data.normalized_squared_norm_x;
   b.total_weight += ec.weight;
   b.data.average_squared_norm_x = (static_cast<float>((b.normalized_sum_norm_x + 1e-6) / b.total_weight));
 
   ec.partial_prediction = b.data.predict / b.data.average_squared_norm_x;
+  std::cout << std::hexfloat << "[ftrl] partial_p: " << ec.partial_prediction << ", predict: " << b.data.predict << ", avg norm x: " << b.data.average_squared_norm_x << std::endl;
   ec.pred.scalar = GD::finalize_prediction(b.all->sd, b.all->logger, ec.partial_prediction);
 
   VW_DBG(ec) << "coin_betting_predict.predict() " << VW::debug::scalar_pred_to_string(ec) << VW::debug::features_to_string(ec)
@@ -356,15 +404,15 @@ void update_after_prediction_pistol(ftrl& b, VW::example& ec)
 
 void coin_betting_update_after_prediction(ftrl& b, VW::example& ec)
 {
-  print_ftrl(b);
-  std::cout << "[coin betting] b.data before: " << std::endl; 
-  print_ftrl_update_data(b.data);
+  // print_ftrl(b);
+  // std::cout << "[coin betting] b.data before: " << std::endl; 
+  // print_ftrl_update_data(b.data);
   b.data.update = b.all->loss->first_derivative(b.all->sd, ec.pred.scalar, ec.l.simple.label) * ec.weight;
-  std::cout << "[coin betting] b.data after: " << std::endl;
-  print_ftrl_update_data(b.data);
+  // std::cout << "[coin betting] b.data after: " << std::endl;
+  // print_ftrl_update_data(b.data);
   GD::foreach_feature<ftrl_update_data, inner_coin_betting_update_after_prediction>(*b.all, ec, b.data);
-  std::cout << "[coin betting] b.data after foreach: " << std::endl;
-  print_ftrl_update_data(b.data);
+  // std::cout << "[coin betting] b.data after foreach: " << std::endl;
+  // print_ftrl_update_data(b.data);
 }
 
 // NO_SANITIZE_UNDEFINED needed in learn functions because

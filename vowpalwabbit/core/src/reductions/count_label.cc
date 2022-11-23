@@ -35,10 +35,9 @@ void count_label_single(reduction_data& data, VW::LEARNER::single_learner& base,
   // std::cout << "[count label]" << ec.l.simple.label << ", " << ec.weight << std::endl;
   if VW_STD17_CONSTEXPR (is_learn) { 
     // assert(data._all->sd->multiclass_log_loss == 7);
-    std::cout << "[count label]: before learn, loss: " << ec.loss <<std::endl;
+    // std::cout << "[count label]: before learn, loss: " << ec.loss <<std::endl;
     base.learn(ec); 
-    std::cout << "[count label]: after learn, loss: " << ec.loss <<std::endl;
-
+    // std::cout << "[count label]: after learn, loss: " << ec.loss <<std::endl;
   }
   else
   {

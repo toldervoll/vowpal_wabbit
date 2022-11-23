@@ -114,6 +114,39 @@ inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat)
 template <class DataT, class WeightOrIndexT, void (*FuncT)(DataT&, float, WeightOrIndexT)>
 inline void foreach_feature(VW::workspace& all, VW::example& ec, DataT& dat, size_t& num_interacted_features)
 {
+  // if (!all.weights.sparse) {
+  //   auto& weights = all.weights.dense_weights;
+  //   auto iter = weights.begin();
+  //   auto end = weights.end();
+
+  //   std::vector<std::tuple<size_t, float, float, float, float, float, float>> weights_vector;
+
+  //   while(iter < end) {
+  //     bool non_zero = false;
+  //     for (int i=0; i < 6; i++) {
+  //       if (*iter[i] != 0.f) {
+  //         non_zero = true;
+  //       }
+  //     }
+
+  //     if (non_zero) {
+  //       weights_vector.emplace_back(iter.index_without_stride(), *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+  //     }
+  //     ++iter;
+  //   }
+
+  //   std::cout << "[gd.h] weights: " << std::endl;
+  //   for (auto& weights:weights_vector) {
+  //     std::cout << std::get<0>(weights) << " "
+  //       << std::get<1>(weights) << " "
+  //       << std::get<2>(weights) << " "
+  //       << std::get<3>(weights) << " "
+  //       << std::get<4>(weights) << " "
+  //       << std::get<5>(weights) << " "
+  //       << std::get<6>(weights) << " "
+  //     << std::endl;
+  //   }
+  // }
   return all.weights.sparse
       ? foreach_feature<DataT, WeightOrIndexT, FuncT, sparse_parameters>(all.weights.sparse_weights,
             all.ignore_some_linear, all.ignore_linear, *ec.interactions, *ec.extent_interactions, all.permutations, ec,

@@ -8,6 +8,7 @@
 #include "vw/core/example_predict.h"
 #include "vw/core/v_array.h"
 #include <iostream>
+#include <bitset>
 
 #undef VW_DEBUG_LOG
 #define VW_DEBUG_LOG vw_dbg::gd_predict
@@ -29,13 +30,13 @@ inline void foreach_feature(WeightsT& weights, const features& fs, DataT& dat, u
   {
     weight& w = weights[(f.index() + offset)];
     float* w2 = &weights[(f.index() + offset)];
-    std::cout << "\t [gd pred] WEIGHTS: "; 
+    std::cout << "\t  [gd pred] WEIGHTS:" << std::bitset<32>(f.index()) << ", ";
     for (size_t i = 0; i < 5; i++) {
       std::cout << w2[i] << ",";
     }
    std::cout << std::endl;
   
-    std::cout << "[gd pred] w: " << w << ", f.indexUNORDER: " << f.index() << ", offset: " << offset << ", mult: " << mult << ", f.value(): " << f.value() << std::endl;
+    // std::cout << "[gd pred] w: " << w << ", f.indexUNORDER: " << f.index() << ", offset: " << offset << ", mult: " << mult << ", f.value(): " << f.value() << std::endl;
     FuncT(dat, mult * f.value(), w);
   }
 }
@@ -89,8 +90,39 @@ inline void foreach_feature(WeightsT& weights, bool ignore_some_linear, std::arr
   }
   else
   {
-    // std::cout << "[gd predict] ec: " << VW::debug::features_to_string(ec) << std::endl;
-    for (features& f : ec) { foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset); }
+    // auto end = *weights1.end();
+
+    // std::vector<std::tuple<size_t, float, float, float, float, float, float>> weights_vector;
+
+    // while(iter < end) {
+    //   bool non_zero = false;
+    //   for (int i=0; i < 6; i++) {
+    //     if (*iter[i] != 0.f) {
+    //       non_zero = true;
+    //     }
+    //   }
+
+    //   if (non_zero) {
+    //     weights_vector.emplace_back(iter.index_without_stride(), *iter[0], *iter[1], *iter[2], *iter[3], *iter[4], *iter[5]);
+    //   }
+    //   ++iter;
+    // }
+
+    // for (auto& w:weights) {
+    //   std::cout << w << ", ";
+    //   // std::cout << std::get<0>(w) << " "
+    //   //   << std::get<1>(w) << " "
+    //   //   << std::get<2>(w) << " "
+    //   //   << std::get<3>(w) << " "
+    //   //   << std::get<4>(w) << " "
+    //   //   << std::get<5>(w) << " "
+    //   //   << std::get<6>(w) << " "
+    //   // << std::endl;
+    // }
+    std::cout << "[gd predict] ec: " << VW::debug::features_to_string(ec) << std::endl;
+    for (features& f : ec) {
+      foreach_feature<DataT, FuncT, WeightsT>(weights, f, dat, offset); 
+    }
   }
 
   generate_interactions<DataT, WeightOrIndexT, FuncT, WeightsT>(
