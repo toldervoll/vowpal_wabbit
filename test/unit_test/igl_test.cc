@@ -20,7 +20,7 @@ using simulator::cb_sim;
 using example_vector = std::vector<std::vector<std::string>>;
 using ftrl_weights_vector = std::vector<std::tuple<float, float, float, float, float, float>>;
 using separate_weights_vector = std::vector<std::tuple<size_t, float, float, float, float, float, float>>;
-int ex_num = 51;
+int ex_num = 50;
 
 example_vector sl_vector = {
 {
@@ -989,10 +989,6 @@ BOOST_AUTO_TEST_CASE(test_two_vw) {
   auto* multi_vw = VW::initialize("--cb_explore_adf --coin --noconstant --dsjson --readable_model pol.readable"); // -q ca
 
   for (int i = 0; i < ex_num; i++) {
-    if (i == 4) {
-      std::cout << "====5th ex====" << std::endl;
-    }
-
     for (auto& ex_str : sl_vector[i]) {
       VW::example* ex = VW::read_example(*sl_vw, ex_str);
       // std::cout << "sl vw feature: " << VW::debug::features_to_string(*ex) << std::endl;
@@ -1000,13 +996,13 @@ BOOST_AUTO_TEST_CASE(test_two_vw) {
       sl_vw->finish_example(*ex);
     }
 
-    // auto multi_ex = multi_vector[i];
-    // auto examples = parse_dsjson(*multi_vw, multi_ex);
-    // multi_vw->learn(examples);
-    // multi_vw->finish_example(examples);
+    auto multi_ex = multi_vector[i];
+    auto examples = parse_dsjson(*multi_vw, multi_ex);
+    multi_vw->learn(examples);
+    multi_vw->finish_example(examples);
   }
   get_separate_weights(sl_vw);
-  // get_separate_weights(multi_vw);
+  get_separate_weights(multi_vw);
 
   VW::finish(*sl_vw);
   VW::finish(*multi_vw);
@@ -1032,10 +1028,10 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
       sl_vw->finish_example(*ex);
     }
 
-    // auto multi_ex = multi_vector[i];
-    // auto examples = parse_dsjson(*multi_vw, multi_ex);
-    // multi_vw->learn(examples);
-    // multi_vw->finish_example(examples);
+    auto multi_ex = multi_vector[i];
+    auto examples = parse_dsjson(*multi_vw, multi_ex);
+    multi_vw->learn(examples);
+    multi_vw->finish_example(examples);
   }
 
   // train IGL
@@ -1049,7 +1045,7 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
 
   // separate weights
   separate_weights_vector sl_weights = get_separate_weights(sl_vw);
-  // separate_weights_vector multi_weights = get_separate_weights(multi_vw);
+  separate_weights_vector multi_weights = get_separate_weights(multi_vw);
 
   // split IGL weights
   std::vector<separate_weights_vector> igl_weights = split_weights(igl_vw);
@@ -1059,17 +1055,17 @@ BOOST_AUTO_TEST_CASE(test_3_vw) {
   VW::finish(*igl_vw);
 
   std::vector<size_t> sl_hash = get_hash(sl_weights);
-  // std::vector<size_t> multi_hash = get_hash(multi_weights);
+  std::vector<size_t> multi_hash = get_hash(multi_weights);
   std::vector<size_t> igl_sl_hash = get_hash(igl_weights[0]);
-  // std::vector<size_t> igl_multi_hash = get_hash(igl_weights[1]);
+  std::vector<size_t> igl_multi_hash = get_hash(igl_weights[1]);
 
   BOOST_CHECK(sl_hash == igl_sl_hash);
-  // BOOST_CHECK(multi_hash == igl_multi_hash);
+  BOOST_CHECK(multi_hash == igl_multi_hash);
   std::cout << "sl weights size: " << sl_weights.size() << std::endl;
   BOOST_CHECK(sl_weights.size() > 0);
   BOOST_CHECK(sl_weights == igl_weights[0]);
 
   // std::cout << "multi weights size: " << multi_weights.size() << std::endl;
-  // BOOST_CHECK(multi_weights.size() > 0);
-  // BOOST_CHECK(multi_weights == igl_weights[1]);
+  BOOST_CHECK(multi_weights.size() > 0);
+  BOOST_CHECK(multi_weights == igl_weights[1]);
 }

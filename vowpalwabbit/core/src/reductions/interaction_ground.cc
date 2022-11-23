@@ -147,9 +147,9 @@ void learn(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
   //           << "fake cost: " << fake_cost
   //           << std::endl;
 
-  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
-  // base.learn(ec_seq, 1);
-  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  base.learn(ec_seq, 1);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
   ec_seq.push_back(feedback_ex);
 }
 
@@ -157,9 +157,9 @@ void predict(interaction_ground& ig, multi_learner& base, VW::multi_ex& ec_seq)
 {
   // Is loss func used in predict?
   // matches what we do for learn
-  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
-  // base.predict(ec_seq, 1);
-  // VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
+  base.predict(ec_seq, 1);
+  VW::reductions::swap_ftrl(ig.ftrl2.get(), ig.ftrl_base);
 }
 } // namespace
 
