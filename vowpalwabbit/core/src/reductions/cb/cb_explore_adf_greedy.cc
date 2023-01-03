@@ -135,12 +135,26 @@ VW::LEARNER::base_learner* VW::reductions::cb_explore_adf_greedy_setup(VW::setup
   using explore_type = cb_explore_adf_base<cb_explore_adf_greedy>;
   auto data = VW::make_unique<explore_type>(all.global_metrics.are_metrics_enabled(), epsilon, first_only);
 
+  auto input_label_type = base->get_input_label_type() == label_type_t::CB_WITH_OBSERVATIONS
+    ? VW::label_type_t::CB_WITH_OBSERVATIONS : VW::label_type_t::CB;
+  auto output_label_type = input_label_type == VW::label_type_t::CB_WITH_OBSERVATIONS
+    ? VW::label_type_t::CB_WITH_OBSERVATIONS : VW::label_type_t::CB;
+  all.example_parser->lbl_parser = input_label_type == VW::label_type_t::CB_WITH_OBSERVATIONS
+    ? VW::cb_with_observations_global : VW::cb_label_parser_global;
+
+
+  std::cout << "[cb_explore_greedy] labe type: " << to_string(input_label_type)
+    << ", " << to_string(output_label_type) << std::endl;
+
+  std::cout << "[cb_explore_greedy] lbl parser type: " << to_string(all.example_parser->lbl_parser.label_type) << std::endl;
+
+
   if (epsilon < 0.0 || epsilon > 1.0) { THROW("The value of epsilon must be in [0,1]"); }
   auto* l = make_reduction_learner(std::move(data), base, explore_type::learn, explore_type::predict,
       stack_builder.get_setupfn_name(cb_explore_adf_greedy_setup))
                 .set_learn_returns_prediction(base->learn_returns_prediction)
-                .set_input_label_type(VW::label_type_t::CB)
-                .set_output_label_type(VW::label_type_t::CB)
+                .set_input_label_type(input_label_type)
+                .set_output_label_type(output_label_type)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_PROBS)
                 .set_params_per_weight(problem_multiplier)

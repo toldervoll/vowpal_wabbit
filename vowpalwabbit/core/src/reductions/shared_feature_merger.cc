@@ -32,7 +32,7 @@ public:
   bool store_shared_ex_in_reduction_features = false;
 };
 
-// TODO: remve this
+// TODO: remove this
 bool is_igl(VW::multi_ex& ec_seq) {
   char feedback_ns = 'v';
   auto ex = ec_seq.back();
@@ -128,7 +128,7 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
 
   auto* base = stack_builder.setup_base_learner();
   if (base == nullptr) { return nullptr; }
-  std::set<label_type_t> sfm_labels = {label_type_t::CB, label_type_t::CS};
+  std::set<label_type_t> sfm_labels = {label_type_t::CB, label_type_t::CS, label_type_t::CB_WITH_OBSERVATIONS};
   if (sfm_labels.find(base->get_input_label_type()) == sfm_labels.end() || !base->is_multiline()) { return base; }
 
   auto data = VW::make_unique<sfm_data>();
@@ -137,6 +137,7 @@ VW::LEARNER::base_learner* VW::reductions::shared_feature_merger_setup(VW::setup
 
   auto* multi_base = VW::LEARNER::as_multiline(base);
   data->label_type = all.example_parser->lbl_parser.label_type;
+  std::cout << "[shared feature merger] label type:" << to_string(data->label_type) << std::endl;
 
   // Both label and prediction types inherit that of base.
   auto* learner = VW::LEARNER::make_reduction_learner(std::move(data), multi_base, predict_or_learn<true>,

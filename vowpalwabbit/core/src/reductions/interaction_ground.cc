@@ -95,6 +95,7 @@ void learn(interaction_ground& igl, multi_learner& base, VW::multi_ex& ec_seq)
   for (auto& ex_action : ec_seq) {
     VW::empty_example(*igl.ik_all, igl.ik_ex);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
+    // TODO: read the feedback example from example seq
     VW::details::append_example_namespaces_from_example(igl.ik_ex, *ex_action);
     igl.ik_ex.indices.push_back(VW::details::IGL_FEEDBACK_NAMESPACE);
     igl.ik_ex.feature_space[VW::details::IGL_FEEDBACK_NAMESPACE].push_back(1, feature_hash); // TODO: is the feature value always 1?
@@ -195,6 +196,8 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   assert(ik_options->was_supplied("loss_function") == true);
 
   ld->ik_all = VW::initialize_experimental(VW::make_unique<VW::config::options_cli>(VW::split_command_line(ik_args)));
+  // ld->ik_all->example_parser->lbl_parser = VW::get_label_parser(label_type_t::CB_WITH_OBSERVATIONS);
+  all->example_parser->lbl_parser = VW::get_label_parser(label_type_t::CB_WITH_OBSERVATIONS);
 
   std::unique_ptr<ik_stack_builder> ik_builder = VW::make_unique<ik_stack_builder>(ftrl_coin);
   ik_builder->delayed_state_attach(*ld->ik_all, *ik_options);
@@ -215,8 +218,8 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   auto* igl_learner = make_reduction_learner(
       std::move(ld), pi_learner, learn, predict, stack_builder.get_setupfn_name(interaction_ground_setup))
                 .set_params_per_weight(problem_multiplier)
-                .set_input_label_type(label_type_t::CB)
-                .set_output_label_type(label_type_t::CB)
+                .set_input_label_type(label_type_t::CB_WITH_OBSERVATIONS)
+                .set_output_label_type(label_type_t::CB_WITH_OBSERVATIONS)
                 .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
                 .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
                 .build();

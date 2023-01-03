@@ -234,13 +234,22 @@ namespace
 {
 float weight_cb_eval(const VW::cb_eval_label& ld) { return ld.event.weight; }
 
+float weight_cb_with_observations(const VW::cb_eval_label& ld) { return ld.event.weight; }
+
 void default_label_cb_eval(VW::cb_eval_label& ld)
 {
   ld.event.reset_to_default();
   ld.action = 0;
 }
 
+void default_label_cb_with_observations(VW::cb_with_observations_label& ld) {
+  ld.event.reset_to_default();
+  ld.is_observation = false;
+}
+
 bool test_label_cb_eval(const VW::cb_eval_label& ld) { return ld.event.is_test_label(); }
+
+bool test_label_cb_with_observations(const VW::cb_with_observations_label& ld) { return ld.event.is_test_label(); }
 
 void parse_label_cb_eval(VW::cb_eval_label& ld, VW::reduction_features& red_features,
     VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger)
@@ -248,6 +257,17 @@ void parse_label_cb_eval(VW::cb_eval_label& ld, VW::reduction_features& red_feat
   if (words.size() < 2) THROW("Evaluation can not happen without an action and an exploration");
 
   ld.action = static_cast<uint32_t>(VW::details::hashstring(words[0].data(), words[0].length(), 0));
+
+  // TODO - make this a span and there is no allocation
+  const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());
+  ::parse_label_cb(ld.event, red_features, reuse_mem, rest_of_tokens, logger);
+}
+
+void parse_label_cb_with_observations(VW::cb_with_observations_label& ld, VW::reduction_features& red_features,
+    VW::label_parser_reuse_mem& reuse_mem, const std::vector<VW::string_view>& words, VW::io::logger& logger) {
+  if (words.size() < 2) THROW("CB with observations type needs cb event and is_observation flag.");
+
+  ld.is_observation = static_cast<bool>(VW::details::hashstring(words[0].data(), words[0].length(), 0));
 
   // TODO - make this a span and there is no allocation
   const auto rest_of_tokens = std::vector<VW::string_view>(words.begin() + 1, words.end());
@@ -276,6 +296,28 @@ VW::label_parser VW::cb_eval_label_parser_global = {
     [](const VW::polylabel& label) { return test_label_cb_eval(label.cb_eval); },
     // Label type
     VW::label_type_t::CB_EVAL};
+
+VW::label_parser VW::cb_with_observations_global = {
+  // default_label
+  [](VW::polylabel& label) { default_label_cb_with_observations(label.cb_with_observations); },
+  // parse_label
+  [](VW::polylabel& label, VW::reduction_features& red_features, VW::label_parser_reuse_mem& reuse_mem,
+      const VW::named_labels* /*ldict*/, const std::vector<VW::string_view>& words, VW::io::logger& logger)
+  { parse_label_cb_with_observations(label.cb_with_observations, red_features, reuse_mem, words, logger); },
+  // cache_label
+  [](const VW::polylabel& label, const VW::reduction_features& /*red_features*/, io_buf& cache,
+      const std::string& upstream_name, bool text)
+  { return VW::model_utils::write_model_field(cache, label.cb, upstream_name, text); },
+  // read_cached_label
+  [](VW::polylabel& label, VW::reduction_features& /*red_features*/, io_buf& cache)
+  { return VW::model_utils::read_model_field(cache, label.cb); },
+  // get_weight
+  [](const VW::polylabel& /*label*/, const VW::reduction_features& /*red_features*/) { return 1.f; },
+  // test_label
+  [](const VW::polylabel& label) { return test_label_cb_with_observations(label.cb_with_observations); },
+  // Label type
+  VW::label_type_t::CB_WITH_OBSERVATIONS
+};
 
 namespace VW
 {
