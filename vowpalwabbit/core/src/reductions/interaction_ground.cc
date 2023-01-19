@@ -52,13 +52,49 @@ private:
   VW::LEARNER::base_learner* _ik_base;
 };
 
+std::vector<std::vector<namespace_index>> get_ik_interactions(std::vector<std::vector<namespace_index>> interactions, VW::example* observation_ex) {
+  std::vector<std::vector<namespace_index>> new_interactions;
+  for (auto& interaction : interactions) {
+    for (auto& obs_ns : observation_ex->indices) {
+      if (obs_ns == VW::details::DEFAULT_NAMESPACE) {
+        obs_ns = VW::details::IGL_FEEDBACK_NAMESPACE;
+      }
+
+      new_interactions.push_back(interaction);
+      new_interactions.back().push_back(obs_ns);
+    }
+  }
+
+  return new_interactions;
+}
+
+void add_obs_features_to_ik_ex(VW::example* ik_ex, VW::example* obs_ex) {
+  for (auto& obs_ns : obs_ex->indices) {
+    ik_ex->indices.push_back(obs_ns);
+
+    for (size_t i = 0; i < obs_ex->feature_space[obs_ns].indices.size(); i++) {
+      auto feature_hash = obs_ex->feature_space[obs_ns].indices[i];
+      auto feature_val = obs_ex->feature_space[obs_ns].values[i];
+
+      if (obs_ns == VW::details::DEFAULT_NAMESPACE) {
+        obs_ns = VW::details::IGL_FEEDBACK_NAMESPACE;
+      }
+
+      ik_ex->feature_space[obs_ns].indices.push_back(feature_hash);
+      ik_ex->feature_space[obs_ns].values.push_back(feature_val);
+
+      ik_ex->num_features++;
+    }
+  }
+}
+
 class interaction_ground
 {
 public:
   VW::LEARNER::single_learner* ik_learner = nullptr;
   VW::example ik_ex;
 
-  std::vector<std::vector<namespace_index>> ik_interactions;
+  std::vector<std::vector<namespace_index>> interactions;
   std::vector<std::vector<extent_term>>* extent_interactions;
 
   std::unique_ptr<VW::workspace> ik_all;
@@ -88,27 +124,21 @@ void learn(interaction_ground& igl, multi_learner& base, VW::multi_ex& ec_seq)
     chosen_action_idx = std::distance(ec_seq.begin(), it);
   }
 
-  // TODO: refactor. Now assume last example is feedback example
-  auto feedback_ex = ec_seq.back();
+  auto observation_ex = ec_seq.back();
   ec_seq.pop_back();
 
-  auto ns_iter = feedback_ex->indices.begin();
-  uint64_t feature_hash = *feedback_ex->feature_space.at(*ns_iter).indices.data();
+  std::vector<std::vector<namespace_index>> ik_interactions = get_ik_interactions(igl.interactions, observation_ex);
 
-  //TODO: gather all feedback ex ns
-
-  for (auto& ex_action : ec_seq) {
+  for (auto& action_ex : ec_seq) {
     VW::empty_example(*igl.ik_all, igl.ik_ex);
     // TODO: Do we need constant feature here? If so, VW::add_constant_feature
     // TODO: read the feedback example from example seq
-    VW::details::append_example_namespaces_from_example(igl.ik_ex, *ex_action);
-    igl.ik_ex.indices.push_back(VW::details::IGL_FEEDBACK_NAMESPACE);
-    igl.ik_ex.feature_space[VW::details::IGL_FEEDBACK_NAMESPACE].push_back(1, feature_hash); // TODO: is the feature value always 1?
-    igl.ik_ex.num_features++;
+    VW::details::append_example_namespaces_from_example(igl.ik_ex, *action_ex);
 
+    add_obs_features_to_ik_ex(&igl.ik_ex, observation_ex);
     // 1. set up ik ex
     float ik_label = -1.f;
-    if (!ex_action->l.cb.costs.empty()) {
+    if (!action_ex->l.cb_with_observations.event.costs.empty()) {
       ik_label = 1.f;
     }
     igl.ik_ex.l.simple.label = ik_label;
@@ -117,16 +147,19 @@ void learn(interaction_ground& igl, multi_learner& base, VW::multi_ex& ec_seq)
     float importance = 0.6f;
     igl.ik_ex.weight = importance;
 
-    igl.ik_ex.interactions = &igl.ik_interactions;
+    igl.ik_ex.interactions = &ik_interactions;
     igl.ik_ex.extent_interactions = igl.extent_interactions; // TODO(low pri): not reuse igl.extent_interactions, need to add in feedback
 
     // 2. ik learn
     igl.ik_learner->learn(igl.ik_ex, 0);
 
-    if (!ex_action->l.cb.costs.empty()) {
+    if (!action_ex->l.cb_with_observations.event.costs.empty()) {
       ik_pred = igl.ik_ex.pred.scalar;
     }
     // TODO: shared data print needs to be fixed
+
+    action_ex->l.cb = action_ex->l.cb_with_observations.event;
+    // TODO: maybe reset the cb_with_observation label
   }
 
   std::swap(igl.ik_ftrl->all->loss, igl.ik_all->loss);
@@ -141,12 +174,15 @@ void learn(interaction_ground& igl, multi_learner& base, VW::multi_ex& ec_seq)
   }
 
   // 5. Train pi policy
-  ec_seq[chosen_action_idx]->l.cb.costs[0].cost = fake_cost;
+  VW::cb_class cb_label = VW::cb_class{};
+  cb_label.cost = fake_cost;
+  auto& ld = ec_seq[chosen_action_idx]->l.cb;
+  ld.costs[0] = cb_label;
 
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
   base.learn(ec_seq, 1);
   std::swap(*igl.pi_ftrl.get(), *igl.ik_ftrl);
-  ec_seq.push_back(feedback_ex);
+  ec_seq.push_back(observation_ex);
 }
 
 void predict(interaction_ground& igl, multi_learner& base, VW::multi_ex& ec_seq)
@@ -212,13 +248,14 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   ld->pi_ftrl = VW::make_unique<ftrl>();
   *ld->pi_ftrl.get() = *ld->ik_ftrl;
 
-  // TODO: add all feedback ns
-  for (auto& interaction : all->interactions) {
-    interaction.push_back(VW::details::IGL_FEEDBACK_NAMESPACE);
-    ld->ik_interactions.push_back(interaction);
-    interaction.pop_back();
-  }
+  // // // TODO: add all feedback ns
+  // for (auto& interaction : all->interactions) {
 
+  //   interaction.push_back(VW::details::IGL_FEEDBACK_NAMESPACE);
+  //   ld->ik_interactions.push_back(interaction);
+  //   interaction.pop_back();
+  // }
+  ld->interactions = all->interactions;
   ld->extent_interactions = &all->extent_interactions;
 
   auto* igl_learner = make_reduction_learner(
@@ -226,6 +263,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
                 .set_params_per_weight(problem_multiplier)
                 .set_input_label_type(label_type_t::CB_WITH_OBSERVATIONS)
                 .set_output_label_type(label_type_t::CB_WITH_OBSERVATIONS)
+                // .set_output_label_type(label_type_t::CB)
                 // .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(prediction_type_t::ACTION_PROBS)
                 // .set_input_prediction_type(prediction_type_t::ACTION_SCORES)

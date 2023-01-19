@@ -914,7 +914,7 @@ TEST(ParseDsjson, CbWithObservations)
   auto vw = VW::initialize("--dsjson --experimental_igl --chain_hash --coin --cb_adf --no_stdin --quiet", nullptr, false, nullptr, nullptr);
   auto examples = vwtest::parse_dsjson(*vw, json_text);
 
-  EXPECT_EQ(examples.size(), 6);
+  EXPECT_EQ(examples.size(), 5);
 
   // Shared example
   EXPECT_EQ(examples[0]->l.cb_with_observations.event.costs.size(), 1);
@@ -968,17 +968,16 @@ TEST(ParseDsjson, CbWithObservations)
 
   // Observation examples
   EXPECT_EQ(examples[4]->l.cb_with_observations.event.costs.size(), 0);
-  EXPECT_EQ(examples[5]->l.cb_with_observations.event.costs.size(), 0);
+
   // Compare observation example namespace
-  EXPECT_THAT(examples[4]->indices, ::testing::ElementsAre(' '));
+  EXPECT_THAT(examples[4]->indices, ::testing::ElementsAre(' ', 'o'));
   EXPECT_EQ(examples[4]->feature_space[' '].indices.size(), 2); // TODO: should remove EventID and ActionTaken
   EXPECT_EQ(examples[4]->feature_space[' '].indices[0], VW::hash_feature(*vw, "v", VW::hash_space(*vw, " ")));
   EXPECT_EQ(examples[4]->feature_space[' '].values[0], 1);
 
-  EXPECT_THAT(examples[5]->indices, ::testing::ElementsAre('o'));
-  EXPECT_EQ(examples[5]->feature_space['o'].indices.size(), 1);
-  EXPECT_EQ(examples[5]->feature_space['o'].indices[0], VW::chain_hash(*vw, "observation_feature", "x", VW::hash_space(*vw, "observation_ns")));
-  EXPECT_EQ(examples[5]->feature_space['o'].indices.size(), 1);
+  EXPECT_EQ(examples[4]->feature_space['o'].indices.size(), 1);
+  EXPECT_EQ(examples[4]->feature_space['o'].indices[0], VW::chain_hash(*vw, "observation_feature", "x", VW::hash_space(*vw, "observation_ns")));
+  EXPECT_EQ(examples[4]->feature_space['o'].indices.size(), 1);
 
   VW::finish_example(*vw, examples);
   VW::finish(*vw);

@@ -667,11 +667,11 @@ public:
   // NO_SANITIZE_UNDEFINED needed because ctx.example_factory function pointer may be typecasted
   BaseState<audit>* NO_SANITIZE_UNDEFINED StartObject(Context<audit>& ctx) override
   {
-    // allocate new example
-    ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
-    ctx._label_parser.default_label(ctx.ex->l);
-    ctx.ex->l.cb_with_observations.is_observation = true;
-    ctx.observation_examples.push_back(ctx.ex);
+    // // allocate new example
+    // ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+    // ctx._label_parser.default_label(ctx.ex->l);
+    // ctx.ex->l.cb_with_observations.is_observation = true;
+    // ctx.observation_examples.push_back(ctx.ex);
     // setup default namespace
     ctx.PushNamespace(" ", this);
 
@@ -1072,8 +1072,11 @@ public:
       ctx.label_object_state.EndObject(ctx, memberCount);
 
       // inject observation examples
-      for (auto &observation_ex : ctx.observation_examples) {
-        ctx.examples->push_back(observation_ex);
+      // for (auto &observation_ex : ctx.observation_examples) {
+      //   ctx.examples->push_back(observation_ex);
+      // }
+      if (ctx.observation_example != nullptr && ctx.observation_example->indices.size() > 0) {
+        ctx.examples->push_back(ctx.observation_example);
       }
       // If we are in CCB mode and there have been no slots. Check label cost, prob and action were passed. In that
       // case this is CB, so generate a single slot with this info.
@@ -1472,6 +1475,13 @@ public:
           if (ctx._label_parser.label_type == VW::label_type_t::CB_WITH_OBSERVATIONS) {
             ctx.key = " ";
             ctx.key_length = 1;
+
+            // allocate new example
+            ctx.ex = &(*ctx.example_factory)(ctx.example_factory_context);
+            ctx._label_parser.default_label(ctx.ex->l);
+            ctx.ex->l.cb_with_observations.is_observation = true;
+            ctx.observation_example = ctx.ex;
+
             return &ctx.o_state;
           }
       }
@@ -1581,7 +1591,8 @@ public:
   std::unordered_map<std::string, std::set<std::string>>* ignore_features = nullptr;
 
   VW::multi_ex* examples;
-  std::vector<VW::example*> observation_examples;
+  // std::vector<VW::example*> observation_examples;
+  VW::example* observation_example = nullptr;
   VW::example* ex;
   rapidjson::InsituStringStream* stream;
   const char* stream_end;

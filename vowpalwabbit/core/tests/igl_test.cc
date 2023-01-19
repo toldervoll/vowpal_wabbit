@@ -881,7 +881,7 @@ TEST(igl_test, igl_model_weights_are_equal_to_train_models_separately) {
   // }
 
   // train IGL
-  for (int i = 0; i < 1; i++) { //ex_num
+  for (int i = 0; i < ex_num; i++) { //ex_num
     // auto json_text = igl_dsjson_vector[i];
     auto json_text = multi_vector[i];
     auto examples = vwtest::parse_dsjson(*igl_vw, json_text);
