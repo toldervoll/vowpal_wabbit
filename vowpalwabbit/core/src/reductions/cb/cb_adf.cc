@@ -464,6 +464,7 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   VW::label_type_t input_label_type = options.was_supplied("experimental_igl")
     ? VW::label_type_t::CB_WITH_OBSERVATIONS : VW::label_type_t::CB;
 
+  std::cout << "[CB ADF input label]" << to_string(input_label_type) << std::endl;
   all.example_parser->lbl_parser = options.was_supplied("experimental_igl")
     ? VW::cb_with_observations_global : VW::cb_label_parser_global;
 
@@ -471,7 +472,8 @@ VW::LEARNER::base_learner* VW::reductions::cb_adf_setup(VW::setup_base_i& stack_
   bool lrp = ld->learn_returns_prediction();
 
   auto* l = make_reduction_learner(std::move(ld), base, learn, predict, stack_builder.get_setupfn_name(cb_adf_setup))
-                .set_input_label_type(input_label_type)
+                // .set_input_label_type(input_label_type)
+                .set_input_label_type(VW::label_type_t::CB)
                 .set_output_label_type(VW::label_type_t::CS)
                 .set_input_prediction_type(VW::prediction_type_t::ACTION_SCORES)
                 .set_output_prediction_type(VW::prediction_type_t::ACTION_SCORES)
