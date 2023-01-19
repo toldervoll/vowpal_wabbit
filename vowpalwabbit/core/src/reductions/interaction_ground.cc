@@ -80,17 +80,22 @@ void learn(interaction_ground& igl, multi_learner& base, VW::multi_ex& ec_seq)
   float ik_pred = 0.f;
   int chosen_action_idx = 0;
 
-  const auto it = std::find_if(ec_seq.begin(), ec_seq.end(), [](VW::example* item) { return !item->l.cb.costs.empty(); });
-  if (it != ec_seq.end())
-  {
+  const auto it = std::find_if(ec_seq.begin(), ec_seq.end(), [](VW::example* item) {
+    return !item->l.cb_with_observations.event.costs.empty();
+  });
+
+  if (it != ec_seq.end()) {
     chosen_action_idx = std::distance(ec_seq.begin(), it);
   }
 
-  auto feedback_ex = ec_seq.back(); // TODO: refactor. Now assume last example is feedback example
+  // TODO: refactor. Now assume last example is feedback example
+  auto feedback_ex = ec_seq.back();
   ec_seq.pop_back();
 
   auto ns_iter = feedback_ex->indices.begin();
   uint64_t feature_hash = *feedback_ex->feature_space.at(*ns_iter).indices.data();
+
+  //TODO: gather all feedback ex ns
 
   for (auto& ex_action : ec_seq) {
     VW::empty_example(*igl.ik_all, igl.ik_ex);
@@ -207,6 +212,7 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
   ld->pi_ftrl = VW::make_unique<ftrl>();
   *ld->pi_ftrl.get() = *ld->ik_ftrl;
 
+  // TODO: add all feedback ns
   for (auto& interaction : all->interactions) {
     interaction.push_back(VW::details::IGL_FEEDBACK_NAMESPACE);
     ld->ik_interactions.push_back(interaction);
@@ -220,8 +226,10 @@ base_learner* VW::reductions::interaction_ground_setup(VW::setup_base_i& stack_b
                 .set_params_per_weight(problem_multiplier)
                 .set_input_label_type(label_type_t::CB_WITH_OBSERVATIONS)
                 .set_output_label_type(label_type_t::CB_WITH_OBSERVATIONS)
-                .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
-                .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
+                // .set_output_prediction_type(prediction_type_t::ACTION_SCORES)
+                .set_output_prediction_type(prediction_type_t::ACTION_PROBS)
+                // .set_input_prediction_type(prediction_type_t::ACTION_SCORES)
+                .set_input_prediction_type(prediction_type_t::ACTION_PROBS)
                 .build();
   // TODO: assert ftrl is the base, fail otherwise
   // VW::reductions::util::fail_if_enabled

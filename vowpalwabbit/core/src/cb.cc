@@ -157,6 +157,18 @@ bool VW::ec_is_example_header_cb(VW::example const& ec)  // example headers just
   return false;
 }
 
+bool VW::ec_is_example_header_cb_with_observations(VW::example const& ec) {
+  const auto& costs = ec.l.cb_with_observations.event.costs;
+  if (costs.size() !=1) {
+    return false;
+  }
+  if (costs[0].probability == -1.f) {
+    return true;
+  }
+
+  return false;
+}
+
 static std::string known_cost_to_str(const VW::cb_class* known_cost)
 {
   if (known_cost == nullptr) { return " known"; }

@@ -86,6 +86,8 @@ public:
   bool is_observation;
 };
 
+bool ec_is_example_header_cb_with_observations(VW::example const& ec);
+
 extern VW::label_parser cb_with_observations_global;
 }  // namespace VW
 
